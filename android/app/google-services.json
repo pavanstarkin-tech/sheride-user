@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "18953853541",
+    "firebase_url": "https://sheride-1-default-rtdb.firebaseio.com",
+    "project_id": "sheride-1",
+    "storage_bucket": "sheride-1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:18953853541:android:4589d8cd23c9a752d2448c",
+        "android_client_info": {
+          "package_name": "com.sheride.rider"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "18953853541-5sfc1344cq4n11ube3lg8qm9mle6kqrl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwoAzTXR7itiSSo9RDSouqXIYC0ljeJHM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "18953853541-5sfc1344cq4n11ube3lg8qm9mle6kqrl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:18953853541:android:d28efef9cd5b6765d2448c",
+        "android_client_info": {
+          "package_name": "com.sheride.user"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "18953853541-5sfc1344cq4n11ube3lg8qm9mle6kqrl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwoAzTXR7itiSSo9RDSouqXIYC0ljeJHM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "18953853541-5sfc1344cq4n11ube3lg8qm9mle6kqrl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
