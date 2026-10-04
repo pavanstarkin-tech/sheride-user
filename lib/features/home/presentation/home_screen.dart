@@ -10,6 +10,7 @@ import '../../../core/services/location_service.dart';
 import '../../../core/services/realtime_db_service.dart';
 import '../../auth/domain/user_model.dart';
 import '../../profile/presentation/profile_screen.dart';
+import '../../rides/data/destination_preload_service.dart';
 import '../../rides/domain/ride_model.dart';
 import '../../rides/presentation/travel_screen.dart';
 import '../../services/presentation/services_screen.dart';
@@ -109,6 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLocating = false;
           _updateRecentPlacesForUserCity(addr.locality, addr.city);
         });
+        DestinationPreloadService().startBackgroundPreload(lat: _currentLat, lng: _currentLng);
       }
     } else if (mounted) {
       final addr = await _locationService.reverseGeocode(_currentLat, _currentLng);

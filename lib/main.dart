@@ -7,6 +7,7 @@ import 'core/services/mapbox_service.dart';
 import 'core/services/network_service.dart';
 import 'core/services/storage_service.dart';
 import 'features/notifications/data/notification_service.dart';
+import 'features/rides/data/destination_preload_service.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -51,6 +52,9 @@ void main() async {
 
   MapboxService.initMapbox();
   await NotificationService.initializeLocalNotifications();
+
+  // Kick off background preload of destination places & image galleries immediately
+  DestinationPreloadService().startBackgroundPreload();
 
   runApp(const SheRideUserApp());
 }

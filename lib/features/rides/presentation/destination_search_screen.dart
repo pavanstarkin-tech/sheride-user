@@ -8,30 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/storage_service.dart';
+import '../data/destination_preload_service.dart';
 import '../data/ride_history_service.dart';
 import '../domain/ride_model.dart';
-
-class DynamicPlaceItem {
-  final String title;
-  final String address;
-  final double lat;
-  final double lng;
-  final String tag; // 'Nearby', 'Recent', 'Visited'
-  final double distanceKm;
-  final double zoom;
-  final String? photoUrl;
-
-  const DynamicPlaceItem({
-    required this.title,
-    required this.address,
-    required this.lat,
-    required this.lng,
-    required this.tag,
-    required this.distanceKm,
-    this.zoom = 15.0,
-    this.photoUrl,
-  });
-}
+import 'widgets/place_card_image_slider.dart';
 
 /// Mapbox Search Box POI Photo Component
 /// Flow:
@@ -327,11 +307,36 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                 name: 'Current location',
               ));
 
+    // Instant Zero-Delay Load from Background Preload Service
+    final preload = DestinationPreloadService();
+    if (preload.nearbyPlaces.isNotEmpty) {
+      _dynamicPlaces = List.from(preload.nearbyPlaces);
+      _recentSearches = List.from(preload.recentSearches);
+      _isLoadingNearby = false;
+    } else {
+      _isLoadingNearby = true;
+      preload.startBackgroundPreload(lat: _pickupLocation.lat, lng: _pickupLocation.lng);
+    }
+    preload.addListener(_onPreloadUpdated);
+
     _initData();
 
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
       _searchController.text = widget.initialQuery!;
       _onSearchChanged(widget.initialQuery!);
+    }
+  }
+
+  void _onPreloadUpdated() {
+    if (mounted) {
+      final preload = DestinationPreloadService();
+      if (preload.nearbyPlaces.isNotEmpty) {
+        setState(() {
+          _dynamicPlaces = List.from(preload.nearbyPlaces);
+          _recentSearches = List.from(preload.recentSearches);
+          _isLoadingNearby = false;
+        });
+      }
     }
   }
 
@@ -666,6 +671,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
 
   @override
   void dispose() {
+    DestinationPreloadService().removeListener(_onPreloadUpdated);
     _searchController.dispose();
     super.dispose();
   }
@@ -971,7 +977,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Mapbox Photo / Static Map Preview
+                  // Gesture-Controlled Image Slider (No dots, No arrows)
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -989,13 +995,10 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: MapboxPoiImage(
+                        child: PlaceCardImageSlider(
+                          photoUrls: place.photoUrls,
                           placeName: place.title,
-                          lat: place.lat,
-                          lng: place.lng,
-                          zoom: place.zoom,
-                          initialPhotoUrl: place.photoUrl,
-                          fit: BoxFit.cover,
+                          onTap: () => _onSelectDropLocation(place.title, place.address, place.lat, place.lng),
                         ),
                       ),
                     ),
