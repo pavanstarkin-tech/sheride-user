@@ -19,6 +19,7 @@ class DynamicPlaceItem {
   final String tag; // 'Nearby', 'Recent', 'Visited'
   final double distanceKm;
   final double zoom;
+  final String? photoUrl;
 
   const DynamicPlaceItem({
     required this.title,
@@ -28,6 +29,7 @@ class DynamicPlaceItem {
     required this.tag,
     required this.distanceKm,
     this.zoom = 15.0,
+    this.photoUrl,
   });
 }
 
@@ -187,45 +189,119 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
       debugPrint("Load recent searches error: $e");
     }
 
-    // 3. Dynamically Query Mapbox Geocoding for Popular POIs Around Current GPS Location
+    // 3. Dynamically Query Mapbox Search Box & Geocoding for POIs (with photos metadata support)
     try {
       final lat = _pickupLocation.lat;
       final lng = _pickupLocation.lng;
+      final sessionToken = DateTime.now().millisecondsSinceEpoch.toString();
 
       // Query prominent nearby transit hubs, shopping malls, railway stations and landmarks around user coordinates
-      final categories = ['railway station', 'bus station', 'mall', 'hospital', 'complex'];
+      final categories = ['railway station', 'bus station', 'shopping mall', 'hospital', 'complex'];
       for (final cat in categories) {
         if (combined.length >= 12) break;
-        final url = Uri.parse(
-          'https://api.mapbox.com/geocoding/v5/mapbox.places/${Uri.encodeComponent(cat)}.json'
-          '?proximity=$lng,$lat&types=poi,address,neighborhood,locality&limit=3&access_token=${ApiConstants.mapboxAccessToken}',
-        );
 
-        final resp = await http.get(url).timeout(const Duration(seconds: 4));
-        if (resp.statusCode == 200) {
-          final data = jsonDecode(resp.body);
-          final features = data['features'] as List<dynamic>? ?? [];
-          for (final f in features) {
-            final placeName = f['text'] as String? ?? '';
-            final fullAddr = f['place_name'] as String? ?? placeName;
-            final center = f['center'] as List<dynamic>?;
-            if (center != null && center.length >= 2 && placeName.isNotEmpty) {
-              final pLng = (center[0] as num).toDouble();
-              final pLat = (center[1] as num).toDouble();
-              final key = placeName.toLowerCase();
+        // Try Mapbox Search Box API first for POIs with photo metadata
+        try {
+          final searchBoxUrl = Uri.parse(
+            'https://api.mapbox.com/search/searchbox/v1/suggest'
+            '?q=${Uri.encodeComponent(cat)}&language=en&proximity=$lng,$lat&types=poi&limit=2'
+            '&session_token=$sessionToken&access_token=${ApiConstants.mapboxAccessToken}',
+          );
 
-              if (!seenNames.contains(key)) {
-                seenNames.add(key);
-                final dist = _locationService.calculateDistanceKm(lat, lng, pLat, pLng);
-                combined.add(DynamicPlaceItem(
-                  title: placeName,
-                  address: fullAddr,
-                  lat: pLat,
-                  lng: pLng,
-                  tag: 'Nearby',
-                  distanceKm: dist,
-                  zoom: 15.2,
-                ));
+          final sbResp = await http.get(searchBoxUrl).timeout(const Duration(seconds: 3));
+          if (sbResp.statusCode == 200) {
+            final sbData = jsonDecode(sbResp.body);
+            final suggestions = sbData['suggestions'] as List<dynamic>? ?? [];
+            for (final s in suggestions) {
+              final mapboxId = s['mapbox_id'] as String? ?? '';
+              final name = s['name'] as String? ?? '';
+              final fullAddr = s['full_address'] as String? ?? (s['place_formatted'] as String? ?? name);
+
+              if (mapboxId.isNotEmpty && name.isNotEmpty && !seenNames.contains(name.toLowerCase())) {
+                // Retrieve POI details with photos attribute set
+                final retrieveUrl = Uri.parse(
+                  'https://api.mapbox.com/search/searchbox/v1/retrieve/$mapboxId'
+                  '?attribute_sets=photos&session_token=$sessionToken&access_token=${ApiConstants.mapboxAccessToken}',
+                );
+                final retResp = await http.get(retrieveUrl).timeout(const Duration(seconds: 3));
+                if (retResp.statusCode == 200) {
+                  final retData = jsonDecode(retResp.body);
+                  final feats = retData['features'] as List<dynamic>? ?? [];
+                  if (feats.isNotEmpty) {
+                    final f = feats.first;
+                    final coords = f['geometry']?['coordinates'] as List<dynamic>?;
+                    if (coords != null && coords.length >= 2) {
+                      final pLng = (coords[0] as num).toDouble();
+                      final pLat = (coords[1] as num).toDouble();
+
+                      // Check for photo metadata in Mapbox Search Box response
+                      String? extractedPhotoUrl;
+                      final photos = f['properties']?['metadata']?['photos'] as List<dynamic>? ??
+                          f['properties']?['photos'] as List<dynamic>?;
+                      if (photos != null && photos.isNotEmpty) {
+                        final firstPhoto = photos.first;
+                        if (firstPhoto is Map<String, dynamic>) {
+                          extractedPhotoUrl = firstPhoto['url'] as String? ??
+                              firstPhoto['urls']?['regular'] as String? ??
+                              firstPhoto['urls']?['small'] as String?;
+                        } else if (firstPhoto is String) {
+                          extractedPhotoUrl = firstPhoto;
+                        }
+                      }
+
+                      seenNames.add(name.toLowerCase());
+                      final dist = _locationService.calculateDistanceKm(lat, lng, pLat, pLng);
+                      combined.add(DynamicPlaceItem(
+                        title: name,
+                        address: fullAddr,
+                        lat: pLat,
+                        lng: pLng,
+                        tag: 'Nearby',
+                        distanceKm: dist,
+                        zoom: 15.2,
+                        photoUrl: extractedPhotoUrl,
+                      ));
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (_) {}
+
+        // Fallback: Mapbox Geocoding v5 for reliable location discovery
+        if (combined.length < 12) {
+          final url = Uri.parse(
+            'https://api.mapbox.com/geocoding/v5/mapbox.places/${Uri.encodeComponent(cat)}.json'
+            '?proximity=$lng,$lat&types=poi,address,neighborhood,locality&limit=3&access_token=${ApiConstants.mapboxAccessToken}',
+          );
+
+          final resp = await http.get(url).timeout(const Duration(seconds: 3));
+          if (resp.statusCode == 200) {
+            final data = jsonDecode(resp.body);
+            final features = data['features'] as List<dynamic>? ?? [];
+            for (final f in features) {
+              final placeName = f['text'] as String? ?? '';
+              final fullAddr = f['place_name'] as String? ?? placeName;
+              final center = f['center'] as List<dynamic>?;
+              if (center != null && center.length >= 2 && placeName.isNotEmpty) {
+                final pLng = (center[0] as num).toDouble();
+                final pLat = (center[1] as num).toDouble();
+                final key = placeName.toLowerCase();
+
+                if (!seenNames.contains(key)) {
+                  seenNames.add(key);
+                  final dist = _locationService.calculateDistanceKm(lat, lng, pLat, pLng);
+                  combined.add(DynamicPlaceItem(
+                    title: placeName,
+                    address: fullAddr,
+                    lat: pLat,
+                    lng: pLng,
+                    tag: 'Nearby',
+                    distanceKm: dist,
+                    zoom: 15.2,
+                  ));
+                }
               }
             }
           }
@@ -625,7 +701,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Mapbox Static Image Preview
+                  // Mapbox Photo / Static Map Preview
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -643,32 +719,47 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: const Color(0xFFFCE4EC),
-                            child: const Center(
-                              child: Icon(Icons.location_city_rounded, color: Color(0xFFE91E63), size: 26),
-                            ),
-                          ),
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return Container(
-                              color: const Color(0xFFF5F5F5),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Color(0xFFE91E63),
+                        child: place.photoUrl != null && place.photoUrl!.isNotEmpty
+                            ? Image.network(
+                                place.photoUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: const Color(0xFFFCE4EC),
+                                    child: const Center(
+                                      child: Icon(Icons.location_city_rounded, color: Color(0xFFE91E63), size: 26),
+                                    ),
                                   ),
                                 ),
+                              )
+                            : Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: const Color(0xFFFCE4EC),
+                                  child: const Center(
+                                    child: Icon(Icons.location_city_rounded, color: Color(0xFFE91E63), size: 26),
+                                  ),
+                                ),
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return Container(
+                                    color: const Color(0xFFF5F5F5),
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Color(0xFFE91E63),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
                       ),
                     ),
                   ),
