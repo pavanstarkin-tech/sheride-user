@@ -26,8 +26,11 @@ class DynamicPlaceItem {
     required this.tag,
     required this.distanceKm,
     this.zoom = 15.0,
-    this.photoUrls = const [],
-  });
+    List<String>? photoUrls,
+    String? photoUrl,
+  }) : photoUrls = photoUrls ?? (photoUrl != null && photoUrl.isNotEmpty ? [photoUrl] : const []);
+
+  String? get photoUrl => photoUrls.isNotEmpty ? photoUrls.first : null;
 
   DynamicPlaceItem copyWith({
     List<String>? photoUrls,
