@@ -33,6 +33,181 @@ class DynamicPlaceItem {
   });
 }
 
+/// Mapbox Search Box POI Photo Component
+/// Flow:
+/// 1. Place name + proximity -> Mapbox Search Box API (/suggest)
+/// 2. Extract Mapbox POI mapbox_id
+/// 3. Retrieve place details with attribute_sets=photos (/retrieve)
+/// 4. Extract photo URL from metadata.photos
+/// 5. Display the actual place image (with graceful Mapbox Static Map fallback)
+class MapboxPoiImage extends StatefulWidget {
+  final String placeName;
+  final double lat;
+  final double lng;
+  final double zoom;
+  final String? initialPhotoUrl;
+  final BoxFit fit;
+
+  const MapboxPoiImage({
+    super.key,
+    required this.placeName,
+    required this.lat,
+    required this.lng,
+    this.zoom = 15.0,
+    this.initialPhotoUrl,
+    this.fit = BoxFit.cover,
+  });
+
+  @override
+  State<MapboxPoiImage> createState() => _MapboxPoiImageState();
+}
+
+class _MapboxPoiImageState extends State<MapboxPoiImage> {
+  static final Map<String, String?> _photoCache = {};
+  String? _photoUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _photoUrl = widget.initialPhotoUrl;
+    if (_photoUrl == null || _photoUrl!.isEmpty) {
+      _resolveMapboxPhoto();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant MapboxPoiImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.placeName != widget.placeName || oldWidget.lat != widget.lat || oldWidget.lng != widget.lng) {
+      _photoUrl = widget.initialPhotoUrl;
+      if (_photoUrl == null || _photoUrl!.isEmpty) {
+        _resolveMapboxPhoto();
+      }
+    }
+  }
+
+  Future<void> _resolveMapboxPhoto() async {
+    final cacheKey = '${widget.placeName.toLowerCase().trim()}_${widget.lat.toStringAsFixed(3)}_${widget.lng.toStringAsFixed(3)}';
+    if (_photoCache.containsKey(cacheKey)) {
+      if (mounted) {
+        setState(() => _photoUrl = _photoCache[cacheKey]);
+      }
+      return;
+    }
+
+    try {
+      final sessionToken = DateTime.now().millisecondsSinceEpoch.toString();
+      // Step 1: Place name + proximity -> Mapbox Search Box API
+      final suggestUrl = Uri.parse(
+        'https://api.mapbox.com/search/searchbox/v1/suggest'
+        '?q=${Uri.encodeComponent(widget.placeName)}&language=en&proximity=${widget.lng},${widget.lat}&types=poi&limit=1'
+        '&session_token=$sessionToken&access_token=${ApiConstants.mapboxAccessToken}',
+      );
+      final sResp = await http.get(suggestUrl).timeout(const Duration(seconds: 3));
+      if (sResp.statusCode == 200) {
+        final sData = jsonDecode(sResp.body);
+        final suggestions = sData['suggestions'] as List<dynamic>? ?? [];
+        if (suggestions.isNotEmpty) {
+          // Step 2: Mapbox POI mapbox_id
+          final mapboxId = suggestions.first['mapbox_id'] as String? ?? '';
+          if (mapboxId.isNotEmpty) {
+            // Step 3: Retrieve place details with photos attribute set
+            final retrieveUrl = Uri.parse(
+              'https://api.mapbox.com/search/searchbox/v1/retrieve/$mapboxId'
+              '?attribute_sets=photos&session_token=$sessionToken&access_token=${ApiConstants.mapboxAccessToken}',
+            );
+            final rResp = await http.get(retrieveUrl).timeout(const Duration(seconds: 3));
+            if (rResp.statusCode == 200) {
+              final rData = jsonDecode(rResp.body);
+              final feats = rData['features'] as List<dynamic>? ?? [];
+              if (feats.isNotEmpty) {
+                final f = feats.first;
+                // Step 4: Photo data / photo URL
+                final photos = f['properties']?['metadata']?['photos'] as List<dynamic>? ??
+                    f['properties']?['photos'] as List<dynamic>?;
+                if (photos != null && photos.isNotEmpty) {
+                  final firstPhoto = photos.first;
+                  String? resolvedUrl;
+                  if (firstPhoto is Map<String, dynamic>) {
+                    resolvedUrl = firstPhoto['url'] as String? ??
+                        firstPhoto['urls']?['regular'] as String? ??
+                        firstPhoto['urls']?['small'] as String?;
+                  } else if (firstPhoto is String) {
+                    resolvedUrl = firstPhoto;
+                  }
+                  if (resolvedUrl != null && resolvedUrl.isNotEmpty) {
+                    _photoCache[cacheKey] = resolvedUrl;
+                    if (mounted) {
+                      setState(() => _photoUrl = resolvedUrl);
+                    }
+                    return;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    _photoCache[cacheKey] = null;
+  }
+
+  String get _staticMapUrl =>
+      'https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+e91e63(${widget.lng},${widget.lat})/${widget.lng},${widget.lat},${widget.zoom},0/300x200@2x?access_token=${ApiConstants.mapboxAccessToken}';
+
+  @override
+  Widget build(BuildContext context) {
+    // Step 5: Display actual place image or fallback to Mapbox Static Map tile
+    if (_photoUrl != null && _photoUrl!.isNotEmpty) {
+      return Image.network(
+        _photoUrl!,
+        fit: widget.fit,
+        errorBuilder: (_, __, ___) => _buildStaticTile(),
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return _buildLoading();
+        },
+      );
+    }
+
+    return _buildStaticTile();
+  }
+
+  Widget _buildStaticTile() {
+    return Image.network(
+      _staticMapUrl,
+      fit: widget.fit,
+      errorBuilder: (_, __, ___) => Container(
+        color: const Color(0xFFFCE4EC),
+        child: const Center(
+          child: Icon(Icons.location_city_rounded, color: Color(0xFFE91E63), size: 26),
+        ),
+      ),
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return _buildLoading();
+      },
+    );
+  }
+
+  Widget _buildLoading() {
+    return Container(
+      color: const Color(0xFFF5F5F5),
+      child: const Center(
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Color(0xFFE91E63),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class DestinationSearchScreen extends StatefulWidget {
   final LocationPoint? initialPickup;
   final String? initialQuery;
@@ -564,26 +739,11 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
             child: SizedBox(
               width: 48,
               height: 48,
-              child: Image.network(
-                mapboxThumb,
+              child: MapboxPoiImage(
+                placeName: res.locality,
+                lat: res.lat,
+                lng: res.lng,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: const Color(0xFFF5F5F5),
-                  child: const Icon(Icons.place_rounded, color: Color(0xFFE91E63), size: 22),
-                ),
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    color: const Color(0xFFF5F5F5),
-                    child: const Center(
-                      child: SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFE91E63)),
-                      ),
-                    ),
-                  );
-                },
               ),
             ),
           ),
@@ -680,7 +840,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
         ),
         const SizedBox(height: 10),
 
-        // 2. 3-Column Grid of Dynamic Nearby Places with Mapbox Static Images
+        // 2. 3-Column Grid of Dynamic Nearby Places with Mapbox POI Images
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -693,7 +853,6 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
           ),
           itemBuilder: (context, index) {
             final place = displayedNearby[index];
-            final imageUrl = _getMapboxImageUrl(place.lat, place.lng, zoom: place.zoom, width: 240, height: 160);
 
             return InkWell(
               onTap: () => _onSelectDropLocation(place.title, place.address, place.lat, place.lng),
@@ -719,47 +878,14 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: place.photoUrl != null && place.photoUrl!.isNotEmpty
-                            ? Image.network(
-                                place.photoUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: const Color(0xFFFCE4EC),
-                                    child: const Center(
-                                      child: Icon(Icons.location_city_rounded, color: Color(0xFFE91E63), size: 26),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Image.network(
-                                imageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: const Color(0xFFFCE4EC),
-                                  child: const Center(
-                                    child: Icon(Icons.location_city_rounded, color: Color(0xFFE91E63), size: 26),
-                                  ),
-                                ),
-                                loadingBuilder: (context, child, progress) {
-                                  if (progress == null) return child;
-                                  return Container(
-                                    color: const Color(0xFFF5F5F5),
-                                    child: const Center(
-                                      child: SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Color(0xFFE91E63),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
+                        child: MapboxPoiImage(
+                          placeName: place.title,
+                          lat: place.lat,
+                          lng: place.lng,
+                          zoom: place.zoom,
+                          initialPhotoUrl: place.photoUrl,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
