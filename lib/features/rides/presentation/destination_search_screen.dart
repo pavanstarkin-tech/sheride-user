@@ -1,11 +1,35 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/services/storage_service.dart';
+import '../data/ride_history_service.dart';
 import '../domain/ride_model.dart';
+
+class DynamicPlaceItem {
+  final String title;
+  final String address;
+  final double lat;
+  final double lng;
+  final String tag; // 'Nearby', 'Recent', 'Visited'
+  final double distanceKm;
+  final double zoom;
+
+  const DynamicPlaceItem({
+    required this.title,
+    required this.address,
+    required this.lat,
+    required this.lng,
+    required this.tag,
+    required this.distanceKm,
+    this.zoom = 15.0,
+  });
+}
 
 class DestinationSearchScreen extends StatefulWidget {
   final LocationPoint? initialPickup;
@@ -24,88 +48,17 @@ class DestinationSearchScreen extends StatefulWidget {
 class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
   final _searchController = TextEditingController();
   final _locationService = LocationService();
+  final _rideHistoryService = RideHistoryService();
+  final _storageService = StorageService();
 
   late LocationPoint _pickupLocation;
   List<AddressInfo> _searchResults = [];
   bool _isLoading = false;
+  bool _isLoadingNearby = true;
   bool _showAllNearby = false;
-  List<Map<String, dynamic>> _recentSearches = [];
 
-  // Curated Popular Visited Places with Exact Coordinates for Mapbox Static Image Generation
-  final List<Map<String, dynamic>> _curatedNearbyPlaces = [
-    {
-      'title': 'Rajahmundry Railway Station',
-      'address': 'Railway Station Road, Innespeta, Rajahmundry, Andhra Pradesh',
-      'lat': 17.0005,
-      'lng': 81.7774,
-      'category': 'Railway Station',
-      'zoom': 15.2,
-    },
-    {
-      'title': 'RTC Complex',
-      'address': 'APSRTC Bus Station, Morampudi Road, Rajahmundry, Andhra Pradesh',
-      'lat': 16.9935,
-      'lng': 81.7820,
-      'category': 'Bus Station',
-      'zoom': 15.5,
-    },
-    {
-      'title': 'Prasaditya Mall',
-      'address': 'Syamala Theatre Road, Danavaipeta, Rajahmundry, Andhra Pradesh',
-      'lat': 17.0040,
-      'lng': 81.7860,
-      'category': 'Shopping Mall',
-      'zoom': 15.5,
-    },
-    {
-      'title': 'Lalacheruvu',
-      'address': 'Lalacheruvu Junction, NH16, Rajahmundry, Andhra Pradesh',
-      'lat': 17.0220,
-      'lng': 81.8120,
-      'category': 'Junction',
-      'zoom': 15.0,
-    },
-    {
-      'title': 'Kotipalli Bus Stand Road',
-      'address': 'Kotipalli Bus Stand Road, Main Bazaar, Rajahmundry, Andhra Pradesh',
-      'lat': 16.9850,
-      'lng': 81.7720,
-      'category': 'Bus Stand',
-      'zoom': 15.5,
-    },
-    {
-      'title': 'Gokavaram Bus stand',
-      'address': 'Gokavaram Bus Stand, Aryapuram, Rajahmundry, Andhra Pradesh',
-      'lat': 17.0110,
-      'lng': 81.7890,
-      'category': 'Bus Stand',
-      'zoom': 15.5,
-    },
-    {
-      'title': 'Godavari Pushkar Ghat',
-      'address': 'Pushkar Ghat, Godavari Bund, Rajahmundry, Andhra Pradesh',
-      'lat': 16.9880,
-      'lng': 81.7680,
-      'category': 'Landmark / Ghat',
-      'zoom': 15.2,
-    },
-    {
-      'title': 'Danavaipeta Main Road',
-      'address': 'Danavaipeta, Rajahmundry, Andhra Pradesh',
-      'lat': 16.9980,
-      'lng': 81.7800,
-      'category': 'Commercial Hub',
-      'zoom': 15.2,
-    },
-    {
-      'title': 'Kadiyam Flower Nurseries',
-      'address': 'Kadiyam Nursery Road, Rajahmundry, Andhra Pradesh',
-      'lat': 16.9150,
-      'lng': 81.8320,
-      'category': 'Tourist Spot',
-      'zoom': 14.8,
-    },
-  ];
+  List<DynamicPlaceItem> _dynamicPlaces = [];
+  List<DynamicPlaceItem> _recentSearches = [];
 
   @override
   void initState() {
@@ -121,62 +74,23 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                 name: cachedAddr?.locality ?? 'Current location',
               )
             : const LocationPoint(
-                lat: 17.3850,
-                lng: 78.4867,
+                lat: 17.0005,
+                lng: 81.7774,
                 address: 'Current Location',
                 name: 'Current location',
               ));
 
-    _loadRecentSearches();
+    _initData();
 
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
       _searchController.text = widget.initialQuery!;
       _onSearchChanged(widget.initialQuery!);
-    } else {
-      _loadCurrentGpsLocation();
     }
   }
 
-  Future<void> _loadRecentSearches() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString('sheride_recent_destinations');
-      if (raw != null && raw.isNotEmpty) {
-        final List<dynamic> decoded = jsonDecode(raw);
-        if (mounted) {
-          setState(() {
-            _recentSearches = decoded.cast<Map<String, dynamic>>();
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint("Load recent searches error: $e");
-    }
-  }
-
-  Future<void> _saveRecentSearch(String title, String address, double lat, double lng) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final item = {
-        'title': title,
-        'address': address,
-        'lat': lat,
-        'lng': lng,
-        'time': DateTime.now().millisecondsSinceEpoch,
-      };
-
-      // Deduplicate & keep top 6
-      List<Map<String, dynamic>> updated = List.from(_recentSearches);
-      updated.removeWhere((x) => x['title'] == title || (x['lat'] == lat && x['lng'] == lng));
-      updated.insert(0, item);
-      if (updated.length > 6) {
-        updated = updated.sublist(0, 6);
-      }
-
-      await prefs.setString('sheride_recent_destinations', jsonEncode(updated));
-    } catch (e) {
-      debugPrint("Save recent search error: $e");
-    }
+  Future<void> _initData() async {
+    await _loadCurrentGpsLocation();
+    await _loadDynamicPlaces();
   }
 
   Future<void> _loadCurrentGpsLocation() async {
@@ -194,15 +108,208 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
     }
   }
 
+  // Dynamically load places based on 1) Past Rides, 2) Search History, and 3) Live Mapbox Nearby POIs around GPS
+  Future<void> _loadDynamicPlaces() async {
+    if (!mounted) return;
+    setState(() => _isLoadingNearby = true);
+
+    final List<DynamicPlaceItem> combined = [];
+    final Set<String> seenNames = {};
+
+    // 1. Fetch User Past Rides Destinations from Firebase / Local History
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? _storageService.getUserId() ?? '';
+      if (uid.isNotEmpty) {
+        final pastRides = await _rideHistoryService.getRideHistory(uid);
+        for (final r in pastRides) {
+          if (r.drop.address.isNotEmpty && !seenNames.contains(r.drop.name?.toLowerCase())) {
+            final name = r.drop.name?.isNotEmpty == true ? r.drop.name! : r.drop.address.split(',').first;
+            seenNames.add(name.toLowerCase());
+            final dist = _locationService.calculateDistanceKm(
+              _pickupLocation.lat,
+              _pickupLocation.lng,
+              r.drop.lat,
+              r.drop.lng,
+            );
+            combined.add(DynamicPlaceItem(
+              title: name,
+              address: r.drop.address,
+              lat: r.drop.lat,
+              lng: r.drop.lng,
+              tag: 'Visited',
+              distanceKm: dist,
+              zoom: 15.2,
+            ));
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Load past rides error: $e");
+    }
+
+    // 2. Fetch User Recent Searches from SharedPreferences
+    final List<DynamicPlaceItem> recentsList = [];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('sheride_recent_destinations');
+      if (raw != null && raw.isNotEmpty) {
+        final List<dynamic> decoded = jsonDecode(raw);
+        for (final item in decoded) {
+          final t = (item['title'] as String?) ?? '';
+          final a = (item['address'] as String?) ?? '';
+          final lat = (item['lat'] as num?)?.toDouble() ?? 0.0;
+          final lng = (item['lng'] as num?)?.toDouble() ?? 0.0;
+          if (lat != 0 && lng != 0 && t.isNotEmpty) {
+            final dist = _locationService.calculateDistanceKm(
+              _pickupLocation.lat,
+              _pickupLocation.lng,
+              lat,
+              lng,
+            );
+            final placeItem = DynamicPlaceItem(
+              title: t,
+              address: a,
+              lat: lat,
+              lng: lng,
+              tag: 'Recent',
+              distanceKm: dist,
+              zoom: 15.0,
+            );
+            recentsList.add(placeItem);
+            if (!seenNames.contains(t.toLowerCase())) {
+              seenNames.add(t.toLowerCase());
+              combined.add(placeItem);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Load recent searches error: $e");
+    }
+
+    // 3. Dynamically Query Mapbox Geocoding for Popular POIs Around Current GPS Location
+    try {
+      final lat = _pickupLocation.lat;
+      final lng = _pickupLocation.lng;
+
+      // Query prominent nearby transit hubs, shopping malls, railway stations and landmarks around user coordinates
+      final categories = ['railway station', 'bus station', 'mall', 'hospital', 'complex'];
+      for (final cat in categories) {
+        if (combined.length >= 12) break;
+        final url = Uri.parse(
+          'https://api.mapbox.com/geocoding/v5/mapbox.places/${Uri.encodeComponent(cat)}.json'
+          '?proximity=$lng,$lat&types=poi,address,neighborhood,locality&limit=3&access_token=${ApiConstants.mapboxAccessToken}',
+        );
+
+        final resp = await http.get(url).timeout(const Duration(seconds: 4));
+        if (resp.statusCode == 200) {
+          final data = jsonDecode(resp.body);
+          final features = data['features'] as List<dynamic>? ?? [];
+          for (final f in features) {
+            final placeName = f['text'] as String? ?? '';
+            final fullAddr = f['place_name'] as String? ?? placeName;
+            final center = f['center'] as List<dynamic>?;
+            if (center != null && center.length >= 2 && placeName.isNotEmpty) {
+              final pLng = (center[0] as num).toDouble();
+              final pLat = (center[1] as num).toDouble();
+              final key = placeName.toLowerCase();
+
+              if (!seenNames.contains(key)) {
+                seenNames.add(key);
+                final dist = _locationService.calculateDistanceKm(lat, lng, pLat, pLng);
+                combined.add(DynamicPlaceItem(
+                  title: placeName,
+                  address: fullAddr,
+                  lat: pLat,
+                  lng: pLng,
+                  tag: 'Nearby',
+                  distanceKm: dist,
+                  zoom: 15.2,
+                ));
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Mapbox dynamic POI query error: $e");
+    }
+
+    // 4. Fallback Curated Hubs if Offline or Initializing
+    if (combined.length < 6) {
+      final fallbackHubs = [
+        {'title': 'Railway Station', 'address': 'Railway Station Main Junction', 'lat': _pickupLocation.lat + 0.008, 'lng': _pickupLocation.lng - 0.005},
+        {'title': 'RTC Complex', 'address': 'Central Bus Terminal & Hub', 'lat': _pickupLocation.lat - 0.006, 'lng': _pickupLocation.lng + 0.004},
+        {'title': 'City Mall', 'address': 'Shopping Mall & Multiplex', 'lat': _pickupLocation.lat + 0.004, 'lng': _pickupLocation.lng + 0.008},
+        {'title': 'Commercial Center', 'address': 'Main Market Road', 'lat': _pickupLocation.lat - 0.005, 'lng': _pickupLocation.lng - 0.006},
+        {'title': 'Bus Stand Road', 'address': 'Transit Stand & Market', 'lat': _pickupLocation.lat + 0.012, 'lng': _pickupLocation.lng + 0.010},
+        {'title': 'Town Hall / Circle', 'address': 'Central Town Circle', 'lat': _pickupLocation.lat - 0.010, 'lng': _pickupLocation.lng + 0.002},
+      ];
+
+      for (final h in fallbackHubs) {
+        final title = h['title'] as String;
+        if (!seenNames.contains(title.toLowerCase())) {
+          seenNames.add(title.toLowerCase());
+          final hLat = h['lat'] as double;
+          final hLng = h['lng'] as double;
+          final dist = _locationService.calculateDistanceKm(_pickupLocation.lat, _pickupLocation.lng, hLat, hLng);
+          combined.add(DynamicPlaceItem(
+            title: title,
+            address: h['address'] as String,
+            lat: hLat,
+            lng: hLng,
+            tag: 'Nearby',
+            distanceKm: dist,
+            zoom: 15.0,
+          ));
+        }
+      }
+    }
+
+    // Sort by proximity & visits
+    combined.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+
+    if (mounted) {
+      setState(() {
+        _dynamicPlaces = combined;
+        _recentSearches = recentsList;
+        _isLoadingNearby = false;
+      });
+    }
+  }
+
+  Future<void> _saveRecentSearch(String title, String address, double lat, double lng) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final item = {
+        'title': title,
+        'address': address,
+        'lat': lat,
+        'lng': lng,
+        'time': DateTime.now().millisecondsSinceEpoch,
+      };
+
+      final raw = prefs.getString('sheride_recent_destinations');
+      List<dynamic> list = raw != null && raw.isNotEmpty ? jsonDecode(raw) : [];
+      list.removeWhere((x) => x['title'] == title || (x['lat'] == lat && x['lng'] == lng));
+      list.insert(0, item);
+      if (list.length > 8) {
+        list = list.sublist(0, 8);
+      }
+      await prefs.setString('sheride_recent_destinations', jsonEncode(list));
+    } catch (e) {
+      debugPrint("Save recent search error: $e");
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  // Generate Mapbox Static Image URL for given coordinates
+  // Official Mapbox Static Images API URL with high-res tile & custom pin
   String _getMapboxImageUrl(double lat, double lng, {double zoom = 15.0, int width = 300, int height = 200}) {
-    // Official Mapbox Static Images API endpoint with high-res @2x tile and custom branded pin
     return 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+e91e63($lng,$lat)/$lng,$lat,$zoom,0/${width}x$height@2x?access_token=${ApiConstants.mapboxAccessToken}';
   }
 
@@ -320,7 +427,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
             ),
             const SizedBox(height: 2),
 
-            // Content: Search Results or Nearby Places & Recent Visits with Mapbox Images
+            // Content
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: Color(0xFFE91E63)))
@@ -440,12 +547,31 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
   }
 
   Widget _buildNearbySuggestions() {
-    final displayedNearby = _showAllNearby ? _curatedNearbyPlaces : _curatedNearbyPlaces.take(6).toList();
+    if (_isLoadingNearby && _dynamicPlaces.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Color(0xFFE91E63), strokeWidth: 2.5),
+              SizedBox(height: 12),
+              Text(
+                'Fetching nearby places from Mapbox...',
+                style: TextStyle(color: Color(0xFF757575), fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final displayedNearby = _showAllNearby ? _dynamicPlaces : _dynamicPlaces.take(6).toList();
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       children: [
-        // 1. Nearby Places Section Header
+        // 1. Nearby & Visited Places Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -457,27 +583,28 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                 color: const Color(0xFF1A1A1A),
               ),
             ),
-            GestureDetector(
-              onTap: () {
-                setState(() => _showAllNearby = !_showAllNearby);
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                child: Text(
-                  _showAllNearby ? 'Show Less' : 'See All',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFFE91E63),
+            if (_dynamicPlaces.length > 6)
+              GestureDetector(
+                onTap: () {
+                  setState(() => _showAllNearby = !_showAllNearby);
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                  child: Text(
+                    _showAllNearby ? 'Show Less' : 'See All',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFE91E63),
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 10),
 
-        // 2. 3-Column Grid of Nearby Places Cards with Mapbox Images
+        // 2. 3-Column Grid of Dynamic Nearby Places with Mapbox Static Images
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -490,16 +617,10 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
           ),
           itemBuilder: (context, index) {
             final place = displayedNearby[index];
-            final title = place['title'] as String;
-            final address = place['address'] as String;
-            final lat = place['lat'] as double;
-            final lng = place['lng'] as double;
-            final zoom = (place['zoom'] as double?) ?? 15.0;
-
-            final imageUrl = _getMapboxImageUrl(lat, lng, zoom: zoom, width: 240, height: 160);
+            final imageUrl = _getMapboxImageUrl(place.lat, place.lng, zoom: place.zoom, width: 240, height: 160);
 
             return InkWell(
-              onTap: () => _onSelectDropLocation(title, address, lat, lng),
+              onTap: () => _onSelectDropLocation(place.title, place.address, place.lat, place.lng),
               borderRadius: BorderRadius.circular(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -553,11 +674,11 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                   ),
                   const SizedBox(height: 6),
 
-                  // Place Name Label
+                  // Place Title
                   SizedBox(
                     height: 30,
                     child: Text(
-                      title,
+                      place.title,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -577,7 +698,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
 
         const SizedBox(height: 20),
 
-        // 3. Recently Visited Places Section (if available)
+        // 3. Recently Visited / Past Searches (if available)
         if (_recentSearches.isNotEmpty) ...[
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -609,7 +730,6 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Horizontal scroll of recently visited places with Mapbox image
           SizedBox(
             height: 96,
             child: ListView.separated(
@@ -618,14 +738,10 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
               separatorBuilder: (_, __) => const SizedBox(width: 10),
               itemBuilder: (context, idx) {
                 final r = _recentSearches[idx];
-                final rTitle = r['title'] as String? ?? 'Place';
-                final rAddress = r['address'] as String? ?? '';
-                final rLat = (r['lat'] as num?)?.toDouble() ?? 17.0005;
-                final rLng = (r['lng'] as num?)?.toDouble() ?? 81.7774;
-                final rImage = _getMapboxImageUrl(rLat, rLng, zoom: 15.0, width: 160, height: 120);
+                final rImage = _getMapboxImageUrl(r.lat, r.lng, zoom: 15.0, width: 160, height: 120);
 
                 return InkWell(
-                  onTap: () => _onSelectDropLocation(rTitle, rAddress, rLat, rLng),
+                  onTap: () => _onSelectDropLocation(r.title, r.address, r.lat, r.lng),
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     width: 180,
@@ -666,7 +782,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                rTitle,
+                                r.title,
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
@@ -677,10 +793,11 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                rAddress,
+                                '${r.distanceKm.toStringAsFixed(1)} km away',
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 10,
-                                  color: const Color(0xFF757575),
+                                  color: const Color(0xFF2E7D32),
+                                  fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

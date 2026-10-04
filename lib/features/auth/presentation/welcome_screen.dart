@@ -13,8 +13,8 @@ class WelcomeScreen extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // Background Image with Rider in Pink Helmet
-          Image.network(
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800',
+          Image.asset(
+            'assets/images/welcome.png',
             fit: BoxFit.cover,
             alignment: Alignment.center,
           ),
