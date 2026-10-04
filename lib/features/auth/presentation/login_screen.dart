@@ -358,10 +358,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 12),
-                      // Brand Logo
-                      const SheRideLogo(size: 100, showTagline: false, useCircle: false),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
+                      // Brand Logo (Large, Unconstrained without circle)
+                      const SheRideLogo(size: 135, showTagline: false, useCircle: false),
+                      const SizedBox(height: 16),
                       Text(
                         'Welcome to SheRide',
                         style: GoogleFonts.plusJakartaSans(
