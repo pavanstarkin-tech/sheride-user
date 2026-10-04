@@ -90,52 +90,64 @@ class SheRideLogo extends StatelessWidget {
 }
 
 class SheRideBannerLogo extends StatelessWidget {
-  final double height;
+  final double? height;
   final double? width;
   final BoxFit fit;
 
   const SheRideBannerLogo({
     super.key,
-    this.height = 42,
-    this.width,
+    this.height,
+    this.width = 260,
     this.fit = BoxFit.contain,
   });
 
+  // banner-logo.png natural dimensions are 500x179 (~2.793:1 aspect ratio)
+  static const double bannerAspectRatio = 500.0 / 179.0;
+
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/banner_logo.png',
-      height: height,
-      width: width,
-      fit: fit,
-      errorBuilder: (_, __, ___) => Image.asset(
-        'assets/images/logo.png',
-        height: height,
-        fit: fit,
-        errorBuilder: (_, __, ___) => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: const BoxDecoration(
-                color: Color(0xFFE91E63),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.female_rounded, color: Colors.white, size: 20),
+    final effectiveWidth = width ?? (height != null ? height! * bannerAspectRatio : 260.0);
+    final effectiveHeight = height ?? (effectiveWidth / bannerAspectRatio);
+
+    return SizedBox(
+      width: effectiveWidth,
+      height: effectiveHeight,
+      child: AspectRatio(
+        aspectRatio: bannerAspectRatio,
+        child: Image.asset(
+          'assets/images/banner_logo.png',
+          fit: fit,
+          errorBuilder: (_, __, ___) => Image.asset(
+            'assets/images/logo.png',
+            fit: fit,
+            errorBuilder: (_, __, ___) => Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE91E63),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.female_rounded, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'SheRide',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFFE91E63),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            const Text(
-              'SheRide',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFFE91E63),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+
 
