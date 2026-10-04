@@ -847,8 +847,6 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
           res.lng,
         );
 
-        final mapboxThumb = _getMapboxImageUrl(res.lat, res.lng, zoom: 15.0, width: 120, height: 120);
-
         return ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
           leading: ClipRRect(

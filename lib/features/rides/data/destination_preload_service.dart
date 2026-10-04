@@ -18,7 +18,7 @@ class DynamicPlaceItem {
   final double zoom;
   final List<String> photoUrls;
 
-  const DynamicPlaceItem({
+  DynamicPlaceItem({
     required this.title,
     required this.address,
     required this.lat,

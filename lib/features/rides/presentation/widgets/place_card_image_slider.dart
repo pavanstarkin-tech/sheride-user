@@ -21,7 +21,6 @@ class PlaceCardImageSlider extends StatefulWidget {
 
 class _PlaceCardImageSliderState extends State<PlaceCardImageSlider> {
   late final PageController _pageController;
-  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -74,9 +73,6 @@ class _PlaceCardImageSliderState extends State<PlaceCardImageSlider> {
         controller: _pageController,
         physics: const BouncingScrollPhysics(),
         itemCount: photos.length,
-        onPageChanged: (idx) {
-          setState(() => _currentIndex = idx);
-        },
         itemBuilder: (context, index) {
           final url = photos[index];
           return Image.network(
