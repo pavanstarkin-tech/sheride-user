@@ -28,23 +28,40 @@ class AboutScreen extends StatelessWidget {
             // Logo & Brand
             Center(
               child: Container(
-                width: 90,
-                height: 90,
+                width: 96,
+                height: 96,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0F5),
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFE91E63), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE91E63).withValues(alpha: 0.18),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-                child: const Center(
-                  child: Icon(Icons.electric_scooter_rounded, size: 48, color: Color(0xFFE91E63)),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 96,
+                    height: 96,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Image.asset('assets/images/ogo.png', fit: BoxFit.contain),
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 14),
-            Text(
-              'SheRide',
-              style: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF1A1A1A)),
+            Image.asset(
+              'assets/images/banner_logo.png',
+              height: 38,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Text(
+                'SheRide',
+                style: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF1A1A1A)),
+              ),
             ),
+            const SizedBox(height: 6),
             Text(
               'Women Ride Together • Version 1.0.0 (Build 100)',
               style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFFE91E63)),
