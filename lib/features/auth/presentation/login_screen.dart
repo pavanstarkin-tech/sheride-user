@@ -35,7 +35,23 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // ignore: unused_field
   bool _isGoogleLoading = false;
+
+  void _quickFillPassengerDemo() {
+    setState(() {
+      _isSignUp = false;
+      _emailController.text = 'ananya.deshmukh@sheride.app';
+      _passwordController.text = 'Passenger@123';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Demo passenger credentials filled! Tap "Sign In". 🌸'),
+        backgroundColor: AppColors.primary,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
 
   Future<void> _handleEmailSubmit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -178,6 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // ignore: unused_element
   Future<void> _handleGoogleSignIn() async {
     final authService = context.read<AuthService>();
     setState(() => _isGoogleLoading = true);
@@ -560,6 +577,31 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(height: 14),
                             ],
+                            if (!_isSignUp) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Passenger Credentials',
+                                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF180D2B)),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: _quickFillPassengerDemo,
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      backgroundColor: const Color(0xFFF0EEFD),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    icon: const Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
+                                    label: Text(
+                                      'Quick Demo Fill',
+                                      style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.primary),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                            ],
                             CustomTextField(
                               controller: _emailController,
                               label: 'Email Address',
@@ -683,55 +725,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 16),
-
-                      // Divider OR
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: Colors.grey.shade300)),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              'OR',
-                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.grey.shade500),
-                            ),
-                          ),
-                          Expanded(child: Divider(color: Colors.grey.shade300)),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Google Sign In Button with Google Logo
-                      OutlinedButton.icon(
-                        onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
-                        icon: _isGoogleLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                              )
-                            : Image.asset(
-                                'assets/icons/google_logo.png',
-                                width: 22,
-                                height: 22,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.g_mobiledata_rounded,
-                                  size: 26,
-                                  color: Colors.red,
-                                ),
-                              ),
-                        label: Text(
-                          _isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google',
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 48),
-                          backgroundColor: Colors.white,
-                          side: BorderSide(color: Colors.grey.shade300, width: 1.2),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                      ),
+                      // Google Login is hidden per request
+                      const SizedBox(height: 12),
 
                       const Spacer(),
                       const SizedBox(height: 16),
