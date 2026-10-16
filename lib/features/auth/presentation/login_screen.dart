@@ -18,39 +18,164 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  bool _isSignUp = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _nameController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   bool _isGoogleLoading = false;
 
-  Future<void> _handleEmailLogin() async {
+  Future<void> _handleEmailSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
     final authService = context.read<AuthService>();
-    try {
-      await authService.signInWithEmailPassword(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
-      if (mounted) context.go('/home');
-    } catch (e) {
-      if (mounted) {
+
+    if (_isSignUp) {
+      if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authService.errorMessage ?? e.toString()),
+          const SnackBar(
+            content: Text('Passwords do not match'),
             backgroundColor: AppColors.error,
           ),
         );
+        return;
+      }
+
+      try {
+        final credential = await authService.registerWithEmailPassword(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        if (credential?.user != null) {
+          try {
+            await credential!.user!.updateDisplayName(_nameController.text.trim());
+          } catch (_) {}
+          await authService.sendEmailVerification();
+          if (mounted) {
+            _showEmailVerificationModal(_emailController.text.trim());
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authService.errorMessage ?? e.toString()),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    } else {
+      try {
+        await authService.signInWithEmailPassword(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        if (mounted) context.go('/home');
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authService.errorMessage ?? e.toString()),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     }
+  }
+
+  void _showEmailVerificationModal(String email) {
+    showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF0EEFD),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.mark_email_read_outlined, size: 36, color: AppColors.primary),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Verify Your Email Address',
+              style: GoogleFonts.fraunces(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF180D2B),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'We sent an activation link to:\n$email\n\nPlease check your inbox and verify your email.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 13.5,
+                color: const Color(0xFF666666),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            CustomButton(
+              text: "I've Verified, Continue",
+              onPressed: () async {
+                final authService = context.read<AuthService>();
+                await authService.reloadUser();
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) context.go('/home');
+              },
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () async {
+                final authService = context.read<AuthService>();
+                await authService.sendEmailVerification();
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Verification email resent! Please check your spam folder too.')),
+                  );
+                }
+              },
+              child: Text(
+                'Resend Verification Email',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _handleGoogleSignIn() async {
@@ -396,7 +521,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SheRideBannerLogo(width: 270),
                       const SizedBox(height: 18),
                       Text(
-                        'Welcome to Lady Pilot',
+                        _isSignUp ? 'Create Account' : 'Welcome to Lady Pilot',
                         style: GoogleFonts.fraunces(
                           fontSize: 26,
                           fontWeight: FontWeight.w900,
@@ -405,14 +530,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '100% Verified Female Captains • Safe & Reliable',
+                        _isSignUp
+                            ? 'Sign up with verified female safety network'
+                            : '100% Verified Female Captains • Safe & Reliable',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: AppColors.primary,
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
 
                       // Email & Password Direct Form
                       Form(
@@ -420,6 +547,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (_isSignUp) ...[
+                              CustomTextField(
+                                controller: _nameController,
+                                label: 'Full Name',
+                                hintText: 'e.g. Ananya Sharma',
+                                prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primary, size: 18),
+                                validator: (val) {
+                                  if (val == null || val.trim().isEmpty) return 'Please enter your name';
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 14),
+                            ],
                             CustomTextField(
                               controller: _emailController,
                               label: 'Email Address',
@@ -453,37 +593,97 @@ class _LoginScreenState extends State<LoginScreen> {
                                 return null;
                               },
                             ),
-                            const SizedBox(height: 6),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: _showForgotPasswordModal,
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: Size.zero,
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            if (_isSignUp) ...[
+                              const SizedBox(height: 14),
+                              CustomTextField(
+                                controller: _confirmPasswordController,
+                                label: 'Confirm Password',
+                                hintText: '••••••••',
+                                obscureText: _obscureConfirmPassword,
+                                prefixIcon: const Icon(Icons.lock_reset_rounded, color: AppColors.primary, size: 18),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                    color: const Color(0xFF757575),
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                                  },
                                 ),
-                                child: Text(
-                                  'Forgot Password?',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primary,
+                                validator: (val) {
+                                  if (val == null || val.length < 6) return 'Password must be at least 6 characters';
+                                  if (val != _passwordController.text) return 'Passwords do not match';
+                                  return null;
+                                },
+                              ),
+                            ],
+                            if (!_isSignUp) ...[
+                              const SizedBox(height: 6),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: _showForgotPasswordModal,
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: Size.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    'Forgot Password?',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            ],
                             const SizedBox(height: 16),
                             CustomButton(
-                              text: 'Sign In',
+                              text: _isSignUp ? 'Create Account' : 'Sign In',
                               isLoading: authService.isLoading,
-                              onPressed: _handleEmailLogin,
+                              onPressed: _handleEmailSubmit,
                             ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 16),
+
+                      // Toggle between Sign In and Sign Up
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _isSignUp ? "Already have an account? " : "Don't have an account? ",
+                            style: GoogleFonts.inter(
+                              fontSize: 13.5,
+                              color: const Color(0xFF666666),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isSignUp = !_isSignUp;
+                              });
+                            },
+                            child: Text(
+                              _isSignUp ? "Sign In" : "Sign Up",
+                              style: GoogleFonts.inter(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
 
                       // Divider OR
                       Row(
@@ -500,7 +700,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
 
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 16),
 
                       // Google Sign In Button with Google Logo
                       OutlinedButton.icon(
