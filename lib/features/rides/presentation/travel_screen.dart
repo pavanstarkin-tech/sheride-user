@@ -352,7 +352,6 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
   Widget _buildPastRideCard(RideModel ride) {
     final date = DateTime.fromMillisecondsSinceEpoch(ride.createdAt);
     final dateStr = DateFormat('dd MMM yyyy, hh:mm a').format(date);
-    final isCompleted = ride.status.toLowerCase() == 'completed';
 
     return InkWell(
       onTap: () => context.push('/trip-details', extra: {'ride': ride}),

@@ -116,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
         .ref('rides')
         .orderByChild('userId')
         .equalTo(uid)
-        .limitToLast(5)
+        .limitToLast(15)
         .onValue
         .listen((event) {
       if (!mounted) return;
@@ -126,17 +126,21 @@ class _HomeScreenState extends State<HomeScreen> {
         data.forEach((key, val) {
           if (val is Map) {
             final m = Map<String, dynamic>.from(val);
-            final drop = m['drop'] as Map?;
-            if (drop != null) {
-              trips.add({
-                'title': drop['name']?.toString() ?? drop['address']?.toString() ?? 'Past Destination',
-                'address': drop['address']?.toString() ?? '',
-                'fare': m['fare'],
-                'status': m['status']?.toString() ?? 'completed',
-                'lat': (drop['lat'] as num?)?.toDouble() ?? _currentLat,
-                'lng': (drop['lng'] as num?)?.toDouble() ?? _currentLng,
-                'createdAt': (m['createdAt'] as num?)?.toInt() ?? 0,
-              });
+            final status = (m['status'] as String?)?.toLowerCase() ?? '';
+            // Only confirmed completed rides appear in home page history. Incomplete/draft rides are excluded.
+            if (status == 'completed') {
+              final drop = m['drop'] as Map?;
+              if (drop != null) {
+                trips.add({
+                  'title': drop['name']?.toString() ?? drop['address']?.toString() ?? 'Past Destination',
+                  'address': drop['address']?.toString() ?? '',
+                  'fare': m['fare'],
+                  'status': 'completed',
+                  'lat': (drop['lat'] as num?)?.toDouble() ?? _currentLat,
+                  'lng': (drop['lng'] as num?)?.toDouble() ?? _currentLng,
+                  'createdAt': (m['createdAt'] as num?)?.toInt() ?? 0,
+                });
+              }
             }
           }
         });

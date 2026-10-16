@@ -44,6 +44,30 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
   late LocationPoint _dropLocation;
   late List<VehicleFareOption> _options;
   int _selectedIndex = 0;
+
+  static final _fallbackVehicle = VehicleFareOption(
+    id: 'scooty',
+    name: 'Scooty',
+    subtitle: 'Solo Swift & Affordable',
+    etaMin: 2,
+    capacity: 1,
+    fare: 25.0,
+    distanceKm: 1.0,
+    durationMin: 5,
+    icon: 'scooter',
+    imageUrl: 'assets/images/vehicles/scooty.png',
+    isElectric: false,
+    badge: '⭐ Best Value',
+    nearbyCount: 3,
+    isAvailable: true,
+  );
+
+  VehicleFareOption get _selectedVehicle {
+    if (_options.isEmpty) return _fallbackVehicle;
+    final idx = (_selectedIndex >= 0 && _selectedIndex < _options.length) ? _selectedIndex : 0;
+    return _options[idx];
+  }
+
   String _selectedPaymentMethod = 'Cash';
   OfferModel? _appliedOffer;
   bool _isBooking = false;
@@ -456,6 +480,54 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
 
     final available = allOptions.where((opt) => opt.isAvailable).toList();
     return available.isNotEmpty ? available : allOptions;
+  }
+
+  List<SheRideMarker> _buildWebNearbyVehicleMarkers() {
+    final selectedOption = _options.isNotEmpty && _selectedIndex < _options.length ? _options[_selectedIndex] : null;
+    return _nearbyVehicles.map((vehicle) {
+      final isMatching = selectedOption != null &&
+          ((selectedOption.id.contains('scoot') && vehicle.vehicleType.contains('scoot')) ||
+           (selectedOption.id.contains('bike') && vehicle.vehicleType.contains('bike')) ||
+           (selectedOption.id.contains('auto') && vehicle.vehicleType.contains('auto')) ||
+           (selectedOption.id.contains('car') && (vehicle.vehicleType.contains('car') || vehicle.vehicleType.contains('cab'))));
+
+      IconData icon = Icons.two_wheeler_rounded;
+      final vt = vehicle.vehicleType.toLowerCase();
+      if (vt.contains('auto')) icon = Icons.electric_rickshaw_rounded;
+      if (vt.contains('car') || vt.contains('cab')) icon = Icons.directions_car_rounded;
+
+      return SheRideMarker(
+        point: ll.LatLng(vehicle.lat, vehicle.lng),
+        width: isMatching ? 44 : 36,
+        height: isMatching ? 44 : 36,
+        child: Container(
+          decoration: BoxDecoration(
+            color: isMatching ? const Color(0xFF7F00FD) : Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: isMatching
+                    ? const Color(0xFF7F00FD).withValues(alpha: 0.35)
+                    : Colors.black.withValues(alpha: 0.18),
+                blurRadius: isMatching ? 8 : 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: Border.all(
+              color: isMatching ? Colors.white : const Color(0xFF7F00FD),
+              width: isMatching ? 2.5 : 1.8,
+            ),
+          ),
+          child: Center(
+            child: Icon(
+              icon,
+              size: isMatching ? 20 : 16,
+              color: isMatching ? Colors.white : const Color(0xFF7F00FD),
+            ),
+          ),
+        ),
+      );
+    }).toList();
   }
 
   Future<Uint8List> _createVehicleMapMarkerImage({
@@ -901,7 +973,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
 
   void _showFareAdjustmentModal(double defaultBoost) {
     double currentSliderBoost = defaultBoost >= 0 ? defaultBoost : (_fareBoost > 0 ? _fareBoost : 5.0);
-    final selectedVehicle = _options[_selectedIndex];
+    final selectedVehicle = _selectedVehicle;
     final originalFare = selectedVehicle.fare;
     final discount = _appliedOffer?.calculateDiscount(originalFare, vehicleType: selectedVehicle.id) ?? 0.0;
     final baseFare = (originalFare - discount).clamp(10.0, double.infinity);
@@ -1137,7 +1209,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
   }
 
   Future<void> _applyFareBoostAndRestart(double boost) async {
-    final selectedVehicle = _options[_selectedIndex];
+    final selectedVehicle = _selectedVehicle;
     final originalFare = selectedVehicle.fare;
     final discount = _appliedOffer?.calculateDiscount(originalFare, vehicleType: selectedVehicle.id) ?? 0.0;
     final newTotalFare = (originalFare - discount + boost).clamp(10.0, double.infinity);
@@ -1177,7 +1249,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
     final authService = context.read<AuthService>();
     final userId = authService.currentUser?.uid ?? 'guest_user_${DateTime.now().millisecondsSinceEpoch}';
 
-    final selectedVehicle = _options[_selectedIndex];
+    final selectedVehicle = _selectedVehicle;
     final originalFare = selectedVehicle.fare;
     final discount = _appliedOffer?.calculateDiscount(originalFare, vehicleType: selectedVehicle.id) ?? 0.0;
     final finalFare = (originalFare - discount + _fareBoost).clamp(10.0, double.infinity);
@@ -1495,7 +1567,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    final selected = _options[_selectedIndex];
+    final selected = _selectedVehicle;
     final originalFare = selected.fare;
     final discount = _appliedOffer?.calculateDiscount(originalFare, vehicleType: selected.id) ?? 0.0;
     final finalFare = (originalFare - discount + _fareBoost).clamp(10.0, double.infinity);
@@ -1570,6 +1642,8 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                           ],
                         ),
                       ),
+                      // Live Nearby Riders / Vehicles around pickup
+                      ..._buildWebNearbyVehicleMarkers(),
                     ],
                   )
                 : mb.MapWidget(

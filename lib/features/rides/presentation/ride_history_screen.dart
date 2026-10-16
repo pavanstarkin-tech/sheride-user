@@ -97,7 +97,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                   final filteredRides = allRides.where((ride) {
                     if (_selectedTabIndex == 1) return ride.status == 'completed';
                     if (_selectedTabIndex == 2) return ride.status == 'cancelled';
-                    return true;
+                    return ride.status == 'completed' || ride.status == 'cancelled';
                   }).toList();
 
                   if (filteredRides.isEmpty) {
