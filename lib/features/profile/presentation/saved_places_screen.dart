@@ -55,7 +55,7 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
           children: [
             Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 16),
-            Text('Add New Favorite Place', style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Add New Favorite Place', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 14),
             TextField(
               controller: titleCtrl,
@@ -92,12 +92,12 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
                     });
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Place saved successfully! 🌸'), backgroundColor: Color(0xFFE91E63)),
+                      const SnackBar(content: Text('Place saved successfully! 🌸'), backgroundColor: Color(0xFF7F00FD)),
                     );
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE91E63),
+                  backgroundColor: const Color(0xFF7F00FD),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                 ),
@@ -113,11 +113,11 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       appBar: AppBar(
         title: Text(
           'Saved Places',
-          style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
+          style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -156,18 +156,18 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF0F5),
+                      color: const Color(0xFFF0EEFD),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(icon, color: const Color(0xFFE91E63), size: 20),
+                    child: Icon(icon, color: const Color(0xFF7F00FD), size: 20),
                   ),
                   title: Text(
                     place['title']!,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700),
                   ),
                   subtitle: Text(
                     place['subtitle']!,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: const Color(0xFF757575)),
+                    style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF757575)),
                   ),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete_outline_rounded, color: Colors.grey, size: 20),
@@ -188,15 +188,15 @@ class _SavedPlacesScreenState extends State<SavedPlacesScreen> {
           OutlinedButton.icon(
             onPressed: _addNewPlace,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFE91E63),
-              side: const BorderSide(color: Color(0xFFE91E63), width: 1.5),
+              foregroundColor: const Color(0xFF7F00FD),
+              side: const BorderSide(color: Color(0xFF7F00FD), width: 1.5),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             icon: const Icon(Icons.add_location_alt_rounded, size: 20),
             label: Text(
               'Add New Favorite Place',
-              style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800),
+              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800),
             ),
           ),
         ],

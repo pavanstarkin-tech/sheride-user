@@ -1,19 +1,26 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart' as ll;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/realtime_db_service.dart';
+import '../../../core/widgets/sheride_interactive_map.dart';
 import '../../auth/domain/user_model.dart';
 import '../../profile/presentation/profile_screen.dart';
 import '../../rides/data/destination_preload_service.dart';
 import '../../rides/domain/ride_model.dart';
 import '../../rides/presentation/travel_screen.dart';
 import '../../services/presentation/services_screen.dart';
+import '../../../core/services/fcm_token_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +30,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<SheRideInteractiveMapState> _interactiveMapKey = GlobalKey();
   int _selectedNavIndex = 0;
   UserModel? _userProfile;
   final _locationService = LocationService();
@@ -34,52 +42,144 @@ class _HomeScreenState extends State<HomeScreen> {
   String _cityName = 'Please wait';
   bool _isLocating = true;
 
-  final List<Map<String, dynamic>> _recentPlaces = [
-    {
-      'title': 'Railway Station',
-      'address': 'Main Junction & Platform Road',
-      'distance': '2.4 km',
-      'icon': 'train',
-      'latOffset': 0.018,
-      'lngOffset': 0.012,
-    },
-    {
-      'title': 'Central Bus Stand',
-      'address': 'RTC Complex & Terminal Hub',
-      'distance': '3.1 km',
-      'icon': 'bus',
-      'latOffset': 0.024,
-      'lngOffset': -0.010,
-    },
-    {
-      'title': 'City Center Mall',
-      'address': 'Commercial Street & Retail Arcade',
-      'distance': '4.5 km',
-      'icon': 'mall',
-      'latOffset': -0.022,
-      'lngOffset': 0.028,
-    },
-  ];
+  StreamSubscription? _liveCaptainsSub;
+  StreamSubscription? _userRidesSub;
+  StreamSubscription<UserModel?>? _userProfileSub;
+  List<Map<String, dynamic>> _realOnlineCaptains = [];
+  List<Map<String, dynamic>> _realRecentRides = [];
 
   @override
   void initState() {
     super.initState();
+    final user = context.read<AuthService>().currentUser;
+    if (user == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go('/welcome');
+      });
+      return;
+    }
     _loadUserProfile();
     _initCurrentLocation();
+    _listenToRealOnlineCaptains();
+    _listenToRealUserRideHistory();
   }
 
-  Future<void> _loadUserProfile() async {
+  @override
+  void dispose() {
+    _liveCaptainsSub?.cancel();
+    _userRidesSub?.cancel();
+    _userProfileSub?.cancel();
+    _locationService.stopLocationPublishing();
+    super.dispose();
+  }
+
+  void _listenToRealOnlineCaptains() {
+    _liveCaptainsSub?.cancel();
+    _liveCaptainsSub = FirebaseDatabase.instance.ref('riders').onValue.listen((event) {
+      if (!mounted) return;
+      if (event.snapshot.exists && event.snapshot.value != null) {
+        final data = Map<dynamic, dynamic>.from(event.snapshot.value as Map);
+        final List<Map<String, dynamic>> onlineCaptains = [];
+        data.forEach((key, val) {
+          if (val is Map) {
+            final isOnline = val['isOnline'] == true;
+            final isApproved = val['isVerified'] == true || val['verificationStatus'] == 'approved';
+            final isNotBlocked = val['isBlocked'] != true;
+            if (isOnline && isApproved && isNotBlocked) {
+              final lat = (val['currentLat'] ?? val['lat'] as num?)?.toDouble();
+              final lng = (val['currentLng'] ?? val['lng'] as num?)?.toDouble();
+              if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+                onlineCaptains.add({
+                  'uid': key.toString(),
+                  'name': (val['name'] ?? 'Captain').toString(),
+                  'vehicleType': (val['vehicleType'] ?? 'Scooty').toString(),
+                  'lat': lat,
+                  'lng': lng,
+                });
+              }
+            }
+          }
+        });
+        setState(() => _realOnlineCaptains = onlineCaptains);
+      } else {
+        setState(() => _realOnlineCaptains = []);
+      }
+    });
+  }
+
+  void _listenToRealUserRideHistory() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    _userRidesSub?.cancel();
+    _userRidesSub = FirebaseDatabase.instance
+        .ref('rides')
+        .orderByChild('userId')
+        .equalTo(uid)
+        .limitToLast(5)
+        .onValue
+        .listen((event) {
+      if (!mounted) return;
+      if (event.snapshot.exists && event.snapshot.value != null) {
+        final data = Map<dynamic, dynamic>.from(event.snapshot.value as Map);
+        final List<Map<String, dynamic>> trips = [];
+        data.forEach((key, val) {
+          if (val is Map) {
+            final m = Map<String, dynamic>.from(val);
+            final drop = m['drop'] as Map?;
+            if (drop != null) {
+              trips.add({
+                'title': drop['name']?.toString() ?? drop['address']?.toString() ?? 'Past Destination',
+                'address': drop['address']?.toString() ?? '',
+                'fare': m['fare'],
+                'status': m['status']?.toString() ?? 'completed',
+                'lat': (drop['lat'] as num?)?.toDouble() ?? _currentLat,
+                'lng': (drop['lng'] as num?)?.toDouble() ?? _currentLng,
+                'createdAt': (m['createdAt'] as num?)?.toInt() ?? 0,
+              });
+            }
+          }
+        });
+        trips.sort((a, b) => (b['createdAt'] as int).compareTo(a['createdAt'] as int));
+        setState(() => _realRecentRides = trips);
+      } else {
+        setState(() => _realRecentRides = []);
+      }
+    });
+  }
+
+  void _loadUserProfile() {
     final authService = context.read<AuthService>();
-    final uid = authService.currentUser?.uid;
-    if (uid != null) {
-      final db = RealtimeDbService();
-      final profile = await db.getUserData(uid);
-      if (mounted) {
+    final user = authService.currentUser;
+    final uid = user?.uid;
+    if (uid == null) {
+      if (mounted) context.go('/welcome');
+      return;
+    }
+    // Register device FCM token in background
+    FcmTokenService().registerUserFcmToken(uid);
+    final db = RealtimeDbService();
+    _userProfileSub?.cancel();
+    _userProfileSub = db.streamUserData(uid).listen((profile) {
+      if (!mounted) return;
+      if (profile != null) {
         setState(() {
           _userProfile = profile;
         });
+      } else {
+        // Fallback: create base profile using Auth info if first time
+        final fallback = UserModel(
+          uid: uid,
+          name: user?.displayName?.isNotEmpty == true ? user!.displayName! : 'Passenger',
+          phone: user?.phoneNumber ?? '',
+          email: user?.email ?? '',
+          profileImageUrl: user?.photoURL ?? '',
+        );
+        setState(() {
+          _userProfile = fallback;
+        });
       }
-    }
+    });
   }
 
   Future<void> _initCurrentLocation() async {
@@ -108,7 +208,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _localityName = addr.locality.isNotEmpty ? addr.locality : 'Current Location';
           _cityName = addr.city.isNotEmpty ? '${addr.city}, ${addr.state}' : 'Your City';
           _isLocating = false;
-          _updateRecentPlacesForUserCity(addr.locality, addr.city);
         });
         DestinationPreloadService().startBackgroundPreload(lat: _currentLat, lng: _currentLng);
       }
@@ -118,7 +217,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _localityName = addr.locality.isNotEmpty ? addr.locality : 'Current Location';
         _cityName = addr.city.isNotEmpty ? '${addr.city}, ${addr.state}' : 'Your Location';
         _isLocating = false;
-        _updateRecentPlacesForUserCity(addr.locality, addr.city);
       });
     }
 
@@ -131,43 +229,52 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _updateRecentPlacesForUserCity(String locality, String city) {
-    final cityName = city.isNotEmpty ? city : locality;
-    setState(() {
-      _recentPlaces[0] = {
-        'title': '$cityName Railway Station',
-        'address': 'Main Railway Junction & Platform Road, $cityName',
-        'distance': '2.4 km',
-        'icon': 'train',
-        'latOffset': 0.018,
-        'lngOffset': 0.012,
-      };
-      _recentPlaces[1] = {
-        'title': '$cityName Central Bus Stand',
-        'address': 'RTC Bus Terminal & Transit Hub, $cityName',
-        'distance': '3.1 km',
-        'icon': 'bus',
-        'latOffset': 0.024,
-        'lngOffset': -0.010,
-      };
-      _recentPlaces[2] = {
-        'title': '$cityName City Center Mall',
-        'address': 'Commercial Arcade & Shopping District, $cityName',
-        'distance': '4.5 km',
-        'icon': 'mall',
-        'latOffset': -0.022,
-        'lngOffset': 0.028,
-      };
-    });
-  }
 
   void _moveMapboxCamera(double lat, double lng) {
+    if (kIsWeb) {
+      _interactiveMapKey.currentState?.moveTo(lat, lng, 14.8);
+      return;
+    }
     if (_mapboxMap != null) {
       _mapboxMap?.setCamera(CameraOptions(
         center: Point(coordinates: Position(lng, lat)),
         zoom: 15.0,
       ));
     }
+  }
+
+  List<SheRideMarker> _buildRealOnlineCaptainMarkers() {
+    return _realOnlineCaptains.map((cap) {
+      final lat = cap['lat'] as double;
+      final lng = cap['lng'] as double;
+      final vehicleType = (cap['vehicleType'] ?? 'scooty').toString().toLowerCase();
+      IconData icon = Icons.two_wheeler_rounded;
+      if (vehicleType.contains('auto')) icon = Icons.electric_rickshaw_rounded;
+      if (vehicleType.contains('car') || vehicleType.contains('cab')) icon = Icons.directions_car_rounded;
+
+      return SheRideMarker(
+        point: ll.LatLng(lat, lng),
+        width: 38,
+        height: 38,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: Border.all(color: AppColors.primary, width: 2),
+          ),
+          child: Center(
+            child: Icon(icon, size: 20, color: AppColors.primary),
+          ),
+        ),
+      );
+    }).toList();
   }
 
   void _onMapCreated(MapboxMap mapboxMap) async {
@@ -204,13 +311,31 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _locationService.stopLocationPublishing();
-    super.dispose();
+  void _showAccountSuspendedDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('⚠️ Account Suspended'),
+        content: const Text(
+          'Your SheRide passenger account has been temporarily restricted by SheRide Mission Control. Please contact SheRide Support for assistance.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToSearch({String? query}) {
+    if (_userProfile != null && _userProfile!.isBlocked) {
+      _showAccountSuspendedDialog();
+      return;
+    }
+
     context.push('/destination-search', extra: {
       'pickup': LocationPoint(
         lat: _currentLat,
@@ -227,6 +352,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _navigateToShortcutDestination(String label) async {
+    if (_userProfile != null && _userProfile!.isBlocked) {
+      _showAccountSuspendedDialog();
+      return;
+    }
+
     // 1. Get fresh live GPS position
     double userLat = _currentLat;
     double userLng = _currentLng;
@@ -393,7 +523,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: IndexedStack(
         index: _selectedNavIndex,
         children: [
@@ -417,17 +547,59 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Stack(
       children: [
-        // Mapbox Native Map Widget
+        // Interactive Draggable Map View (Web: Gesture-friendly OpenStreetMap/Carto, Mobile: Mapbox)
         Positioned.fill(
           bottom: sheetHeight - 24,
-          child: MapWidget(
-            cameraOptions: CameraOptions(
-              center: Point(coordinates: Position(_currentLng, _currentLat)),
-              zoom: 14.8,
-            ),
-            styleUri: ApiConstants.mapboxStyleUrl,
-            onMapCreated: _onMapCreated,
-          ),
+          child: kIsWeb
+              ? SheRideInteractiveMap(
+                  key: _interactiveMapKey,
+                  initialLat: _currentLat,
+                  initialLng: _currentLng,
+                  initialZoom: 14.8,
+                  onRecenter: _centerOnMyLocation,
+                  markers: [
+                    // User live location pulsing pin
+                    SheRideMarker(
+                      point: ll.LatLng(_currentLat, _currentLng),
+                      width: 50,
+                      height: 50,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary.withValues(alpha: 0.22),
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.primary,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(alpha: 0.4),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Real-time verified online Captains from Firebase RTDB (Zero fake markers)
+                    ..._buildRealOnlineCaptainMarkers(),
+                  ],
+                )
+              : MapWidget(
+                  cameraOptions: CameraOptions(
+                    center: Point(coordinates: Position(_currentLng, _currentLat)),
+                    zoom: 14.8,
+                  ),
+                  styleUri: ApiConstants.mapboxStyleUrl,
+                  onMapCreated: _onMapCreated,
+                ),
         ),
 
         // Top White Fade Gradient Background (Ensures Notification & Header Clarity)
@@ -469,7 +641,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   offset: const Offset(0, 4),
                 ),
               ],
-              border: Border.all(color: const Color(0xFFFCE4EC)),
+              border: Border.all(color: const Color(0xFFF0EEFD)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -483,11 +655,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFFE91E63), width: 2),
+                            border: Border.all(color: const Color(0xFF7F00FD), width: 2),
                           ),
                           child: CircleAvatar(
                             radius: 18,
-                            backgroundColor: const Color(0xFFF8BBD0),
+                            backgroundColor: const Color(0xFFEDDCFF),
                             backgroundImage: NetworkImage(photo),
                           ),
                         ),
@@ -500,12 +672,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.location_on, size: 14, color: Color(0xFFE91E63)),
+                                const Icon(Icons.location_on, size: 14, color: Color(0xFF7F00FD)),
                                 const SizedBox(width: 2),
                                 Flexible(
                                   child: Text(
                                     _isLocating ? 'Locating you...' : _localityName,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w800,
                                       color: const Color(0xFF1A1A1A),
@@ -517,7 +689,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             Text(
                               _cityName,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                                 color: const Color(0xFF757575),
@@ -538,14 +710,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF0F5),
+                      color: const Color(0xFFF0EEFD),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFF8BBD9)),
+                      border: Border.all(color: const Color(0xFFEDDCFF)),
                     ),
                     child: const Icon(
                       Icons.notifications_none_rounded,
-                      color: Color(0xFFE91E63),
+                      color: Color(0xFF7F00FD),
                       size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Sign Out / Switch Account Button
+                GestureDetector(
+                  onTap: () async {
+                    await context.read<AuthService>().signOut();
+                    if (context.mounted) context.go('/welcome');
+                  },
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF0F5),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFFFD1DC)),
+                    ),
+                    child: const Icon(
+                      Icons.logout_rounded,
+                      color: Color(0xFFE91E63),
+                      size: 19,
                     ),
                   ),
                 ),
@@ -561,7 +756,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: FloatingActionButton.small(
             onPressed: _centerOnMyLocation,
             backgroundColor: Colors.white,
-            foregroundColor: const Color(0xFFE91E63),
+            foregroundColor: const Color(0xFF7F00FD),
             elevation: 4,
             child: const Icon(Icons.my_location_rounded, size: 22),
           ),
@@ -602,6 +797,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 12),
 
+                // Account Suspended by Admin Notice
+                if (_userProfile != null && _userProfile!.isBlocked) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF1F2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFFDA4AF)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Color(0xFFE11D48), size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Account Suspended by Mission Control. Please contact support.',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFFE11D48),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
                 // Search Bar
                 GestureDetector(
                   onTap: () => _navigateToSearch(),
@@ -626,7 +851,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(width: 12),
                         Text(
                           'Where are you going?',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF1A1A1A),
@@ -637,10 +862,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           width: 32,
                           height: 32,
                           decoration: const BoxDecoration(
-                            color: Color(0xFFE91E63),
+                            color: Color(0xFFFFB001),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                          child: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF180D2B), size: 16),
                         ),
                       ],
                     ),
@@ -687,7 +912,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       'Recently Visited',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF1A1A1A),
@@ -695,94 +920,127 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     Text(
                       'Instant Book',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFFE91E63),
+                        color: const Color(0xFF7F00FD),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
 
-                // Recent Places List Cards (Tapping directly opens Vehicle Selection!)
+                // Real User Trip History (From Firebase Realtime Database)
                 Expanded(
-                  child: ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: _recentPlaces.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF5F5F5)),
-                    itemBuilder: (context, idx) {
-                      final p = _recentPlaces[idx];
-                      IconData icon = Icons.place_rounded;
-                      if (p['icon'] == 'train') icon = Icons.train_rounded;
-                      if (p['icon'] == 'bus') icon = Icons.directions_bus_rounded;
-                      if (p['icon'] == 'mall') icon = Icons.shopping_bag_rounded;
-
-                      return InkWell(
-                        onTap: () => _navigateToDirectBooking(p),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF0F5),
-                                  borderRadius: BorderRadius.circular(10),
+                  child: _realRecentRides.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF0EEFD),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.history_rounded, size: 24, color: Color(0xFF7F00FD)),
                                 ),
-                                child: Icon(icon, color: const Color(0xFFE91E63), size: 16),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
+                                const SizedBox(height: 8),
+                                Text(
+                                  'No previous trips yet',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF1A1A1A),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Tap "Where are you going?" above to book your ride!',
+                                  style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: EdgeInsets.zero,
+                          itemCount: _realRecentRides.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF5F5F5)),
+                          itemBuilder: (context, idx) {
+                            final p = _realRecentRides[idx];
+                            final fare = p['fare'] != null ? '₹${(p['fare'] as num).toInt()}' : 'Completed';
+
+                            return InkWell(
+                              onTap: () => _navigateToDirectBooking(p),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                                child: Row(
                                   children: [
-                                    Text(
-                                      p['title'] as String,
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF1A1A1A),
+                                    Container(
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF0EEFD),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(Icons.history_rounded, color: Color(0xFF7F00FD), size: 18),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            p['title'] as String,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                              color: const Color(0xFF1A1A1A),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          if ((p['address'] as String).isNotEmpty)
+                                            Text(
+                                              p['address'] as String,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 10.5,
+                                                color: const Color(0xFF757575),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                        ],
                                       ),
                                     ),
-                                    Text(
-                                      p['address'] as String,
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 10.5,
-                                        color: const Color(0xFF757575),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE8F5E9),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      child: Text(
+                                        fare,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                          color: const Color(0xFF2E7D32),
+                                        ),
+                                      ),
                                     ),
+                                    const SizedBox(width: 6),
+                                    const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFF7F00FD)),
                                   ],
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE8F5E9),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  p['distance'] as String,
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF2E7D32),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFFE91E63)),
-                            ],
-                          ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
@@ -806,9 +1064,9 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF0F5),
+              color: const Color(0xFFF0EEFD),
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFF8BBD9)),
+              border: Border.all(color: const Color(0xFFEDDCFF)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.04),
@@ -817,12 +1075,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            child: Icon(icon, color: const Color(0xFFE91E63), size: 20),
+            child: Icon(icon, color: const Color(0xFF7F00FD), size: 20),
           ),
           const SizedBox(height: 5),
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(
+            style: GoogleFonts.inter(
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF1A1A1A),
@@ -849,10 +1107,10 @@ class _HomeScreenState extends State<HomeScreen> {
       child: BottomNavigationBar(
         currentIndex: _selectedNavIndex,
         onTap: (idx) => setState(() => _selectedNavIndex = idx),
-        selectedItemColor: const Color(0xFFE91E63),
+        selectedItemColor: const Color(0xFF7F00FD),
         unselectedItemColor: const Color(0xFF757575),
-        selectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w800),
-        unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w600),
+        selectedLabelStyle: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w800),
+        unselectedLabelStyle: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600),
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -862,7 +1120,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
               decoration: _selectedNavIndex == 0
                   ? BoxDecoration(
-                      color: const Color(0xFFFCE4EC),
+                      color: const Color(0xFFF0EEFD),
                       borderRadius: BorderRadius.circular(16),
                     )
                   : null,
@@ -875,7 +1133,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
               decoration: _selectedNavIndex == 1
                   ? BoxDecoration(
-                      color: const Color(0xFFFCE4EC),
+                      color: const Color(0xFFF0EEFD),
                       borderRadius: BorderRadius.circular(16),
                     )
                   : null,
@@ -888,7 +1146,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
               decoration: _selectedNavIndex == 2
                   ? BoxDecoration(
-                      color: const Color(0xFFFCE4EC),
+                      color: const Color(0xFFF0EEFD),
                       borderRadius: BorderRadius.circular(16),
                     )
                   : null,
@@ -901,7 +1159,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
               decoration: _selectedNavIndex == 3
                   ? BoxDecoration(
-                      color: const Color(0xFFFCE4EC),
+                      color: const Color(0xFFF0EEFD),
                       borderRadius: BorderRadius.circular(16),
                     )
                   : null,

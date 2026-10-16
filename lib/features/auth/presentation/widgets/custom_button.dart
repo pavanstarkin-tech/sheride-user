@@ -69,7 +69,8 @@ class CustomButton extends StatelessWidget {
       );
     }
 
-    final effectiveColor = backgroundColor ?? AppColors.primary;
+    final effectiveColor = backgroundColor ?? AppColors.secondary;
+    final effectiveTextColor = textColor ?? (effectiveColor == AppColors.secondary ? const Color(0xFF180D2B) : Colors.white);
     final effectiveRadius = BorderRadius.circular(14);
 
     return SizedBox(
@@ -88,12 +89,12 @@ class CustomButton extends StatelessWidget {
           padding: EdgeInsets.zero,
         ),
         child: isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(effectiveTextColor),
                 ),
               )
             : Row(
@@ -102,7 +103,7 @@ class CustomButton extends StatelessWidget {
                   Text(
                     text,
                     style: TextStyle(
-                      color: textColor ?? Colors.white,
+                      color: effectiveTextColor,
                       fontSize: 15.5,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.3,

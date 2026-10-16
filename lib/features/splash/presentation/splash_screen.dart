@@ -39,16 +39,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 
   Future<void> _checkAuthState() async {
-    await Future.delayed(const Duration(milliseconds: 2000));
+    await Future.delayed(const Duration(milliseconds: 1800));
     if (!mounted) return;
 
-    final authService = context.read<AuthService>();
-    final storageService = StorageService();
-    final savedToken = await storageService.getAuthToken();
+    final currentUser = context.read<AuthService>().currentUser;
 
-    if (authService.isAuthenticated || (savedToken != null && savedToken.isNotEmpty)) {
+    if (currentUser != null) {
       if (mounted) context.go('/home');
     } else {
+      // Clear any dangling local tokens
+      await StorageService().clearSession();
       if (mounted) context.go('/welcome');
     }
   }
@@ -68,9 +68,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFFFFF0F5),
+              Color(0xFFF0EEFD),
               Color(0xFFFFFFFF),
-              Color(0xFFFDE8EF),
+              Color(0xFFF0EEFD),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,

@@ -52,7 +52,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
     final pastRides = _rides.where((r) => r.status == 'completed' || r.status == 'cancelled').toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: SafeArea(
         child: Column(
           children: [
@@ -64,7 +64,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                 children: [
                   Text(
                     'Travel & Activity',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
                       color: const Color(0xFF1A1A1A),
@@ -72,7 +72,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                   ),
                   IconButton(
                     onPressed: _loadRides,
-                    icon: const Icon(Icons.refresh_rounded, color: Color(0xFFE91E63)),
+                    icon: const Icon(Icons.refresh_rounded, color: Color(0xFF7F00FD)),
                   ),
                 ],
               ),
@@ -90,14 +90,14 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
               child: TabBar(
                 controller: _tabController,
                 indicator: BoxDecoration(
-                  color: const Color(0xFFE91E63),
+                  color: const Color(0xFF7F00FD),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelColor: Colors.white,
                 unselectedLabelColor: const Color(0xFF757575),
-                labelStyle: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800),
-                unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600),
+                labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800),
+                unselectedLabelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
                 dividerColor: Colors.transparent,
                 tabs: const [
                   Tab(text: 'Active Rides'),
@@ -110,7 +110,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
             // Tab Views
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFE91E63)))
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF7F00FD)))
                   : TabBarView(
                       controller: _tabController,
                       children: [
@@ -137,15 +137,15 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                 width: 90,
                 height: 90,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFFFF0F5),
+                  color: Color(0xFFF0EEFD),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.electric_scooter_rounded, size: 44, color: Color(0xFFE91E63)),
+                child: const Icon(Icons.electric_scooter_rounded, size: 44, color: Color(0xFF7F00FD)),
               ),
               const SizedBox(height: 20),
               Text(
                 'No Active Rides Right Now',
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.inter(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF1A1A1A),
@@ -155,7 +155,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
               Text(
                 'Book a ride from Home or Services to track your SheRide Captain live on the map.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.inter(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF757575),
@@ -165,7 +165,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
               ElevatedButton.icon(
                 onPressed: () => context.go('/home'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE91E63),
+                  backgroundColor: const Color(0xFF7F00FD),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
@@ -173,7 +173,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                 icon: const Icon(Icons.search_rounded, size: 18),
                 label: Text(
                   'Book a Ride Now',
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w800),
                 ),
               ),
             ],
@@ -195,12 +195,12 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFE91E63).withValues(alpha: 0.08),
+                color: const Color(0xFF7F00FD).withValues(alpha: 0.08),
                 blurRadius: 14,
                 offset: const Offset(0, 4),
               ),
             ],
-            border: Border.all(color: const Color(0xFFF8BBD9)),
+            border: Border.all(color: const Color(0xFFEDDCFF)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,15 +211,15 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF0F5),
+                      color: const Color(0xFFF0EEFD),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       'STATUS: ${ride.status.toUpperCase()}',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFFE91E63),
+                        color: const Color(0xFF7F00FD),
                       ),
                     ),
                   ),
@@ -232,7 +232,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                       ),
                       child: Text(
                         'START OTP: ${ride.otp}',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF2E7D32),
@@ -250,7 +250,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                   Expanded(
                     child: Text(
                       ride.pickup.address,
-                      style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -260,12 +260,12 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFFE91E63)),
+                  const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFF7F00FD)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       ride.drop.address,
-                      style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -279,12 +279,12 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                 children: [
                   Text(
                     '₹${ride.fare.toInt()}',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1A1A1A)),
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w900, color: const Color(0xFF1A1A1A)),
                   ),
                   ElevatedButton(
                     onPressed: () => context.push('/live-tracking', extra: {'ride': ride}),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE91E63),
+                      backgroundColor: const Color(0xFF7F00FD),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -379,10 +379,10 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF0F5),
+                        color: const Color(0xFFF0EEFD),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.electric_scooter_rounded, size: 18, color: Color(0xFFE91E63)),
+                      child: const Icon(Icons.electric_scooter_rounded, size: 18, color: Color(0xFF7F00FD)),
                     ),
                     const SizedBox(width: 10),
                     Column(
@@ -390,11 +390,11 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                       children: [
                         Text(
                           ride.vehicleType.toUpperCase(),
-                          style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800),
+                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800),
                         ),
                         Text(
                           dateStr,
-                          style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: const Color(0xFF757575)),
+                          style: GoogleFonts.inter(fontSize: 10.5, color: const Color(0xFF757575)),
                         ),
                       ],
                     ),
@@ -402,7 +402,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                 ),
                 Text(
                   '₹${ride.fare.toInt()}',
-                  style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w900, color: const Color(0xFF1A1A1A)),
+                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w900, color: const Color(0xFF1A1A1A)),
                 ),
               ],
             ),
@@ -415,7 +415,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                 Expanded(
                   child: Text(
                     ride.pickup.address,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500),
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -425,12 +425,12 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
             const SizedBox(height: 6),
             Row(
               children: [
-                const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFFE91E63)),
+                const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFF7F00FD)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     ride.drop.address,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w500),
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -448,7 +448,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                     const SizedBox(width: 4),
                     Text(
                       'Captain ${ride.riderName ?? "Sunita Sharma"}',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w700, color: const Color(0xFF424242)),
+                      style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700, color: const Color(0xFF424242)),
                     ),
                   ],
                 ),
@@ -456,14 +456,14 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
                   children: [
                     Text(
                       'Trip Details',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFFE91E63),
+                        color: const Color(0xFF7F00FD),
                       ),
                     ),
                     const SizedBox(width: 2),
-                    const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFFE91E63)),
+                    const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF7F00FD)),
                   ],
                 ),
               ],

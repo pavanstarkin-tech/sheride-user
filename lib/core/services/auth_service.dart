@@ -1,10 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'storage_service.dart';
 
 class AuthService extends ChangeNotifier {
   FirebaseAuth? _firebaseAuth;
   final StorageService _storageService;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: '18953853541-5sfc1344cq4n11ube3lg8qm9mle6kqrl.apps.googleusercontent.com',
+    scopes: ['email', 'profile'],
+  );
 
   User? _user;
   String? _verificationId;
@@ -166,6 +172,9 @@ class AuthService extends ChangeNotifier {
       );
       final userCredential = await _firebaseAuth!.signInWithCredential(credential);
       _user = userCredential.user;
+      if (userCredential.user != null) {
+        await _ensureUserProfileInDatabase(userCredential.user!);
+      }
       await _persistUserSession(userCredential.user);
       setLoading(false);
       return userCredential;
@@ -180,7 +189,55 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // 3. Email & Password Sign In
+  // 3. Google Sign-In with real account chooser bottom sheet & RTDB profile persistence
+  Future<UserCredential?> signInWithGoogle() async {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // 1. Trigger the native Google Account chooser modal/bottom-sheet
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // User dismissed / cancelled Google account picker
+        setLoading(false);
+        return null;
+      }
+
+      // 2. Obtain authentication credentials
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // 3. Authenticate with Firebase
+      _firebaseAuth ??= FirebaseAuth.instance;
+      final userCredential = await _firebaseAuth!.signInWithCredential(credential);
+      final user = userCredential.user;
+
+      if (user != null) {
+        _user = user;
+        // 4. Properly store user profile & wallet in Firebase Realtime Database
+        await _ensureUserProfileInDatabase(user, googleUser: googleUser);
+        await _persistUserSession(user);
+      }
+
+      setLoading(false);
+      notifyListeners();
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      setError(_mapAuthError(e.code, e.message));
+      setLoading(false);
+      return null;
+    } catch (e) {
+      debugPrint("Google Sign-In error: $e");
+      setError("Google Sign-In failed. Please try again.");
+      setLoading(false);
+      return null;
+    }
+  }
+
+  // 4. Email & Password Sign In
   Future<UserCredential?> signInWithEmailPassword(String email, String password) async {
     setLoading(true);
     setError(null);
@@ -202,6 +259,9 @@ class AuthService extends ChangeNotifier {
         password: password,
       );
       _user = userCredential.user;
+      if (userCredential.user != null) {
+        await _ensureUserProfileInDatabase(userCredential.user!);
+      }
       await _persistUserSession(userCredential.user);
       setLoading(false);
       return userCredential;
@@ -216,7 +276,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // 4. Email & Password Registration
+  // 5. Email & Password Registration
   Future<UserCredential?> registerWithEmailPassword(String email, String password) async {
     setLoading(true);
     setError(null);
@@ -238,6 +298,9 @@ class AuthService extends ChangeNotifier {
         password: password,
       );
       _user = userCredential.user;
+      if (userCredential.user != null) {
+        await _ensureUserProfileInDatabase(userCredential.user!);
+      }
       await _persistUserSession(userCredential.user);
       setLoading(false);
       return userCredential;
@@ -362,6 +425,9 @@ class AuthService extends ChangeNotifier {
       if (_firebaseAuth != null) {
         await _firebaseAuth!.signOut();
       }
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
       _user = null;
       _verificationId = null;
       await _storageService.clearSession();
@@ -370,6 +436,60 @@ class AuthService extends ChangeNotifier {
     } catch (e) {
       setError(e.toString());
       setLoading(false);
+    }
+  }
+
+  // 13. Ensure full user profile & wallet exist in Firebase Realtime Database
+  Future<void> _ensureUserProfileInDatabase(User user, {GoogleSignInAccount? googleUser}) async {
+    try {
+      final db = FirebaseDatabase.instance;
+      final userRef = db.ref('users/${user.uid}');
+      final snap = await userRef.get();
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      final name = user.displayName?.isNotEmpty == true
+          ? user.displayName!
+          : (googleUser?.displayName?.isNotEmpty == true
+              ? googleUser!.displayName!
+              : (user.email?.split('@').first ?? 'SheRide Passenger'));
+      final email = user.email ?? (googleUser?.email ?? '');
+      final photoUrl = user.photoURL ?? (googleUser?.photoUrl ?? '');
+
+      if (!snap.exists || snap.value == null) {
+        // Complete User Profile creation in /users/{uid}
+        await userRef.set({
+          'uid': user.uid,
+          'name': name,
+          'email': email,
+          'phone': user.phoneNumber ?? '',
+          'gender': 'Female',
+          'profileImageUrl': photoUrl,
+          'emergencyContact': '',
+          'isActive': true,
+          'role': 'user',
+          'createdAt': now,
+          'lastLoginAt': now,
+        });
+
+        // Initialize user wallet with 0.0 balance
+        await db.ref('wallets/${user.uid}').set({
+          'balance': 0.0,
+          'currency': 'INR',
+          'updatedAt': now,
+        });
+      } else {
+        // Existing user: Update lastLoginAt and any missing fields
+        final Map<String, dynamic> updates = {
+          'lastLoginAt': now,
+        };
+        if (photoUrl.isNotEmpty) updates['profileImageUrl'] = photoUrl;
+        if (name.isNotEmpty && name != 'SheRide Passenger') updates['name'] = name;
+        if (email.isNotEmpty) updates['email'] = email;
+
+        await userRef.update(updates);
+      }
+    } catch (e) {
+      debugPrint("Realtime DB error in _ensureUserProfileInDatabase: $e");
     }
   }
 }

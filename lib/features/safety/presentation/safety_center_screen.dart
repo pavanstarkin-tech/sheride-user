@@ -22,12 +22,12 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
             const SizedBox(width: 8),
-            Text('Trigger Emergency SOS?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text('Trigger Emergency SOS?', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         content: Text(
           'This will immediately alert your emergency contacts and the 24/7 SheRide Women Safety Command Center with your live GPS location.',
-          style: GoogleFonts.plusJakartaSans(fontSize: 13),
+          style: GoogleFonts.inter(fontSize: 13),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
@@ -61,7 +61,7 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -94,7 +94,7 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                       children: [
                         Text(
                           'Safety Center',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF1A1A1A),
@@ -102,7 +102,7 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                         ),
                         Text(
                           'Your safety, our top priority.',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFF757575),
@@ -136,8 +136,8 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                       icon: Icons.share_location_rounded,
                       title: 'Share Live Location',
                       subtitle: 'with family & friends',
-                      iconBg: const Color(0xFFFCE4EC),
-                      iconColor: const Color(0xFFE91E63),
+                      iconBg: const Color(0xFFF0EEFD),
+                      iconColor: const Color(0xFF7F00FD),
                       onTap: () => context.push('/emergency-contacts'),
                     ),
                     const Divider(height: 1, color: Color(0xFFF5F5F5)),
@@ -158,8 +158,8 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                       icon: Icons.visibility_rounded,
                       title: 'Live Ride Monitoring',
                       subtitle: 'Our team monitors every ride',
-                      iconBg: const Color(0xFFFCE4EC),
-                      iconColor: const Color(0xFFE91E63),
+                      iconBg: const Color(0xFFF0EEFD),
+                      iconColor: const Color(0xFF7F00FD),
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('24/7 Fleet Safety AI is actively monitoring your route.')),
@@ -173,8 +173,8 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                       icon: Icons.female_rounded,
                       title: 'Verified Women Riders',
                       subtitle: 'Background checked & trained',
-                      iconBg: const Color(0xFFFCE4EC),
-                      iconColor: const Color(0xFFE91E63),
+                      iconBg: const Color(0xFFF0EEFD),
+                      iconColor: const Color(0xFF7F00FD),
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('100% of SheRide captains undergo police verification & safety training.')),
@@ -188,8 +188,8 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                       icon: Icons.mic_none_rounded,
                       title: 'Audio Recording',
                       subtitle: 'During the ride for your safety',
-                      iconBg: const Color(0xFFFCE4EC),
-                      iconColor: const Color(0xFFE91E63),
+                      iconBg: const Color(0xFFF0EEFD),
+                      iconColor: const Color(0xFF7F00FD),
                       onTap: () {
                         setState(() => _audioRecordingEnabled = !_audioRecordingEnabled);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -204,8 +204,8 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                       icon: Icons.sentiment_satisfied_alt_rounded,
                       title: '24/7 Women Support',
                       subtitle: "We're always here for you",
-                      iconBg: const Color(0xFFFCE4EC),
-                      iconColor: const Color(0xFFE91E63),
+                      iconBg: const Color(0xFFF0EEFD),
+                      iconColor: const Color(0xFF7F00FD),
                       onTap: () => context.push('/support'),
                     ),
                   ],
@@ -218,9 +218,9 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0F5),
+                  color: const Color(0xFFF0EEFD),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: const Color(0xFFF8BBD9).withValues(alpha: 0.6)),
+                  border: Border.all(color: const Color(0xFFEDDCFF).withValues(alpha: 0.6)),
                 ),
                 child: Row(
                   children: [
@@ -230,15 +230,15 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                         children: [
                           Text(
                             'Stronger Women',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 17,
                               fontWeight: FontWeight.w900,
-                              color: const Color(0xFFE91E63),
+                              color: const Color(0xFF7F00FD),
                             ),
                           ),
                           Text(
                             'Safer Cities',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 17,
                               fontWeight: FontWeight.w900,
                               color: const Color(0xFF1A1A1A),
@@ -249,7 +249,7 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                     ),
                     const CircleAvatar(
                       radius: 28,
-                      backgroundColor: Color(0xFFF8BBD0),
+                      backgroundColor: Color(0xFFEDDCFF),
                       backgroundImage: NetworkImage('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120'),
                     ),
                   ],
@@ -293,7 +293,7 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF1A1A1A),
@@ -302,7 +302,7 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF757575),

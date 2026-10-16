@@ -8,11 +8,11 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       appBar: AppBar(
         title: Text(
-          'About SheRide',
-          style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
+          'About Lady Pilot',
+          style: GoogleFonts.fraunces(fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF180D2B)),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -34,7 +34,7 @@ class AboutScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFE91E63).withValues(alpha: 0.18),
+                      color: const Color(0xFF7F00FD).withValues(alpha: 0.18),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -42,29 +42,29 @@ class AboutScreen extends StatelessWidget {
                 ),
                 child: ClipOval(
                   child: Image.asset(
-                    'assets/images/logo.png',
+                    'assets/images/final-logo1-1.jpeg',
                     width: 96,
                     height: 96,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Image.asset('assets/images/ogo.png', fit: BoxFit.contain),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 14),
             Image.asset(
-              'assets/images/banner_logo.png',
+              'assets/images/bannerlog.png',
               height: 38,
               fit: BoxFit.contain,
               errorBuilder: (_, __, ___) => Text(
-                'SheRide',
-                style: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF1A1A1A)),
+                'Lady Pilot',
+                style: GoogleFonts.fraunces(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF180D2B)),
               ),
             ),
             const SizedBox(height: 6),
             Text(
               'Women Ride Together • Version 1.0.0 (Build 100)',
-              style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFFE91E63)),
+              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF7F00FD)),
             ),
             const SizedBox(height: 24),
 
@@ -83,12 +83,12 @@ class AboutScreen extends StatelessWidget {
                 children: [
                   Text(
                     'Our Mission',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
+                    style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'SheRide was built from the ground up to deliver safe, reliable, dignified, and sustainable urban mobility exclusively for women passengers and women captains across India. Every ride empowers women financially and ensures complete peace of mind with our Pink Shield real-time safety system.',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 12.5, height: 1.5, color: const Color(0xFF555555)),
+                    'Lady Pilot was built from the ground up to deliver safe, reliable, dignified, and sustainable urban mobility exclusively for women passengers and women captains across India. Every ride empowers women financially and ensures complete peace of mind with our Purple Shield real-time safety system.',
+                    style: GoogleFonts.inter(fontSize: 12.5, height: 1.5, color: const Color(0xFF555555)),
                   ),
                 ],
               ),
@@ -107,15 +107,15 @@ class AboutScreen extends StatelessWidget {
               child: Column(
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.privacy_tip_outlined, color: Color(0xFFE91E63)),
-                    title: Text('Privacy Policy', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                    leading: const Icon(Icons.privacy_tip_outlined, color: Color(0xFF7F00FD)),
+                    title: Text('Privacy Policy', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5)),
                     trailing: const Icon(Icons.chevron_right_rounded, size: 20),
                     onTap: () {
                       showDialog(
                         context: context,
                         builder: (ctx) => AlertDialog(
                           title: const Text('Privacy Policy'),
-                          content: const Text('SheRide takes data privacy seriously. GPS tracking is only enabled during active trips and shared strictly with your designated emergency contacts and security teams.'),
+                          content: const Text('Lady Pilot takes data privacy seriously. GPS tracking is only enabled during active trips and shared strictly with your designated emergency contacts and security teams.'),
                           actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
                         ),
                       );
@@ -123,15 +123,15 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                   ListTile(
-                    leading: const Icon(Icons.description_outlined, color: Color(0xFFE91E63)),
-                    title: Text('Terms of Service', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                    leading: const Icon(Icons.description_outlined, color: Color(0xFF7F00FD)),
+                    title: Text('Terms of Service', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5)),
                     trailing: const Icon(Icons.chevron_right_rounded, size: 20),
                     onTap: () {
                       showDialog(
                         context: context,
                         builder: (ctx) => AlertDialog(
                           title: const Text('Terms of Service'),
-                          content: const Text('By using SheRide, you agree to respectful community conduct. All riders and drivers undergo verification.'),
+                          content: const Text('By using Lady Pilot, you agree to respectful community conduct. All riders and drivers undergo verification.'),
                           actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
                         ),
                       );
@@ -139,10 +139,10 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                   ListTile(
-                    leading: const Icon(Icons.code_rounded, color: Color(0xFFE91E63)),
-                    title: Text('Open Source Licenses', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                    leading: const Icon(Icons.code_rounded, color: Color(0xFF7F00FD)),
+                    title: Text('Open Source Licenses', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5)),
                     trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-                    onTap: () => showLicensePage(context: context, applicationName: 'SheRide', applicationVersion: '1.0.0'),
+                    onTap: () => showLicensePage(context: context, applicationName: 'Lady Pilot', applicationVersion: '1.0.0'),
                   ),
                 ],
               ),
@@ -150,8 +150,8 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             Text(
-              'Made with 🌸 for Empowered Women Everywhere',
-              style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF9E9E9E)),
+              'Made with 💜 for Empowered Women Everywhere',
+              style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF9E9E9E)),
             ),
           ],
         ),

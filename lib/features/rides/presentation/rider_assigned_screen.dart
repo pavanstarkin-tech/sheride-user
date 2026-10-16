@@ -43,9 +43,15 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
         setState(() => _currentRide = updated);
         if (updated.status == 'started' || updated.status == 'in_progress') {
           context.go('/live-tracking', extra: {'ride': updated});
+        } else if (updated.status == 'completed') {
+          context.go('/ride-completed', extra: {'ride': updated});
         } else if (updated.status == 'cancelled') {
+          final isByAdmin = updated.cancelledBy == 'admin';
+          final msg = isByAdmin
+              ? '⚠️ Ride cancelled by SheRide Support${updated.cancelReason != null ? ": ${updated.cancelReason}" : ""}'
+              : 'Ride was cancelled';
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ride was cancelled'), backgroundColor: AppColors.error),
+            SnackBar(content: Text(msg), backgroundColor: AppColors.error),
           );
           context.go('/home');
         }
@@ -110,8 +116,8 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
     final shouldCancel = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Cancel Ride?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to cancel this ride?', style: GoogleFonts.plusJakartaSans()),
+        title: Text('Cancel Ride?', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to cancel this ride?', style: GoogleFonts.inter()),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
           TextButton(
@@ -140,7 +146,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
     final totalRides = _riderProfile?['totalRides'] ?? 1;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -167,7 +173,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                       children: [
                         Text(
                           'Rider Assigned',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF1A1A1A),
@@ -175,7 +181,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                         ),
                         Text(
                           'Your SheRide is on the way!',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFF757575),
@@ -215,13 +221,13 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                           padding: const EdgeInsets.all(3),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFFE91E63), width: 2.5),
+                            border: Border.all(color: const Color(0xFF7F00FD), width: 2.5),
                           ),
                           child: CircleAvatar(
                             radius: 46,
-                            backgroundColor: const Color(0xFFFCE4EC),
+                            backgroundColor: const Color(0xFFF0EEFD),
                             backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                            child: photo.isEmpty ? const Icon(Icons.person, size: 46, color: Color(0xFFE91E63)) : null,
+                            child: photo.isEmpty ? const Icon(Icons.person, size: 46, color: Color(0xFF7F00FD)) : null,
                           ),
                         ),
                         Positioned(
@@ -230,13 +236,13 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE91E63),
+                              color: const Color(0xFF7F00FD),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               '$_calculatedEta\naway',
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white,
@@ -252,7 +258,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                     // Rider Name
                     Text(
                       riderName,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF1A1A1A),
@@ -268,7 +274,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                         const SizedBox(width: 4),
                         Text(
                           '${rating.toStringAsFixed(1)} ($totalRides+ rides)',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF1A1A1A),
@@ -293,17 +299,17 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                         _buildBadge(
                           icon: Icons.female_rounded,
                           label: 'Women Rider',
-                          iconColor: const Color(0xFFE91E63),
-                          bgColor: const Color(0xFFFCE4EC),
-                          textColor: const Color(0xFFC2185B),
+                          iconColor: const Color(0xFF7F00FD),
+                          bgColor: const Color(0xFFF0EEFD),
+                          textColor: const Color(0xFF5C00BC),
                         ),
                         const SizedBox(width: 8),
                         _buildBadge(
                           icon: Icons.track_changes_rounded,
                           label: 'Trained',
-                          iconColor: const Color(0xFFE91E63),
-                          bgColor: const Color(0xFFFCE4EC),
-                          textColor: const Color(0xFFC2185B),
+                          iconColor: const Color(0xFF7F00FD),
+                          bgColor: const Color(0xFFF0EEFD),
+                          textColor: const Color(0xFF5C00BC),
                         ),
                       ],
                     ),
@@ -332,14 +338,14 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                       width: 44,
                       height: 44,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFFCE4EC),
+                        color: Color(0xFFF0EEFD),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         _currentRide.vehicleType == 'bike'
                             ? Icons.electric_scooter_rounded
                             : (_currentRide.vehicleType == 'auto' ? Icons.electric_rickshaw_rounded : Icons.directions_car_rounded),
-                        color: const Color(0xFFE91E63),
+                        color: const Color(0xFF7F00FD),
                         size: 26,
                       ),
                     ),
@@ -350,7 +356,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                         children: [
                           Text(
                             vehicleModel,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF757575),
@@ -358,7 +364,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                           ),
                           Text(
                             vehiclePlate,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF1A1A1A),
@@ -366,7 +372,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                           ),
                           Text(
                             'Women Fleet • Verified',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                               color: const Color(0xFF757575),
@@ -381,7 +387,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(phone.isNotEmpty ? 'Calling $riderName ($phone)...' : 'Calling $riderName...'),
-                            backgroundColor: const Color(0xFFE91E63),
+                            backgroundColor: const Color(0xFF7F00FD),
                           ),
                         );
                       },
@@ -389,10 +395,10 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                         width: 38,
                         height: 38,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFFCE4EC),
+                          color: Color(0xFFF0EEFD),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.phone_outlined, color: Color(0xFFE91E63), size: 20),
+                        child: const Icon(Icons.phone_outlined, color: Color(0xFF7F00FD), size: 20),
                       ),
                     ),
                   ],
@@ -405,7 +411,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                 children: [
                   Text(
                     'Arriving in',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF757575),
@@ -414,7 +420,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                   const SizedBox(height: 2),
                   Text(
                     _calculatedEta,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
                       color: const Color(0xFF1A1A1A),
@@ -428,16 +434,16 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0F5),
+                  color: const Color(0xFFF0EEFD),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFF8BBD9)),
+                  border: Border.all(color: const Color(0xFFEDDCFF)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Ride PIN / OTP:',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF1A1A1A),
@@ -445,10 +451,10 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                     ),
                     Text(
                       _currentRide.otp,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        color: const Color(0xFFE91E63),
+                        color: const Color(0xFF7F00FD),
                         letterSpacing: 2,
                       ),
                     ),
@@ -495,16 +501,16 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0F5),
+                  color: const Color(0xFFF0EEFD),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFF8BBD9).withValues(alpha: 0.6)),
+                  border: Border.all(color: const Color(0xFFEDDCFF).withValues(alpha: 0.6)),
                 ),
                 child: Row(
                   children: [
                     const CircleAvatar(
                       radius: 20,
-                      backgroundColor: Color(0xFFF8BBD0),
-                      child: Icon(Icons.shield_rounded, color: Color(0xFFE91E63), size: 24),
+                      backgroundColor: Color(0xFFEDDCFF),
+                      child: Icon(Icons.shield_rounded, color: Color(0xFF7F00FD), size: 24),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -513,7 +519,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                         children: [
                           Text(
                             "You're in safe hands",
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF1A1A1A),
@@ -522,7 +528,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                           const SizedBox(height: 2),
                           Text(
                             'All our riders are women, verified\n& trained for your safety.',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                               color: const Color(0xFF757575),
@@ -562,7 +568,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(
+            style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: textColor,
@@ -601,7 +607,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.plusJakartaSans(
+              style: GoogleFonts.inter(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF1A1A1A),

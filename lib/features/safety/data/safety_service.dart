@@ -26,8 +26,8 @@ class SafetyService {
 
   // In-memory fallback
   static final List<EmergencyContactModel> _localContacts = [
-    const EmergencyContactModel(contactId: 'ct_1', name: 'Mother (Sunita)', phone: '+91 98480 12345', relation: 'Mother'),
-    const EmergencyContactModel(contactId: 'ct_2', name: 'Sister (Ananya)', phone: '+91 98480 67890', relation: 'Sister'),
+    const EmergencyContactModel(contactId: 'ct_1', name: 'National Women Helpline', phone: '1091', relation: 'Helpline'),
+    const EmergencyContactModel(contactId: 'ct_2', name: 'SheRide 24/7 Safety Desk', phone: '1800-SHERIDE-108', relation: 'Support'),
   ];
   static SosModel? _localSos;
   static final Map<String, LiveSharingModel> _localSharing = {};

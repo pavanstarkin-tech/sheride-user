@@ -159,7 +159,7 @@ class _OtpScreenState extends State<OtpScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFFFF0F5), Color(0xFFFFFFFF)],
+            colors: [Color(0xFFF6F6FE), Color(0xFFFFFFFF)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -227,7 +227,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(color: Colors.pink.shade100, width: 1.5),
+                            borderSide: const BorderSide(color: Color(0xFFEDDCFF), width: 1.5),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),

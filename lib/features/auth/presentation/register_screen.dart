@@ -108,7 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFFFF0F5), Color(0xFFFFFFFF)],
+            colors: [Color(0xFFF6F6FE), Color(0xFFFFFFFF)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -125,9 +125,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: Colors.pink.shade50,
+                      color: const Color(0xFFF0EEFD),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.pink.shade100),
+                      border: Border.all(color: const Color(0xFFEDDCFF)),
                     ),
                     child: const Row(
                       children: [
@@ -252,14 +252,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.pink.shade100, width: 1.5),
+                          border: Border.all(color: const Color(0xFFEDDCFF), width: 1.5),
                         ),
                         child: const Row(
                           children: [
                             Icon(Icons.female_rounded, color: AppColors.primary, size: 22),
                             SizedBox(width: 10),
                             Text(
-                              'Female (SheRide Exclusive)',
+                              'Female (Lady Pilot Exclusive)',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,

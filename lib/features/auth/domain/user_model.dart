@@ -8,6 +8,8 @@ class UserModel {
   final String emergencyContact;
   final String createdAt;
   final bool isActive;
+  final bool isBlocked;
+  final double walletBalance;
   final String role;
 
   UserModel({
@@ -20,6 +22,8 @@ class UserModel {
     this.emergencyContact = '',
     String? createdAt,
     this.isActive = true,
+    this.isBlocked = false,
+    this.walletBalance = 0.0,
     this.role = 'user',
   }) : createdAt = createdAt ?? DateTime.now().toIso8601String();
 
@@ -34,6 +38,8 @@ class UserModel {
       'emergencyContact': emergencyContact,
       'createdAt': createdAt,
       'isActive': isActive,
+      'isBlocked': isBlocked,
+      'walletBalance': walletBalance,
       'role': role,
     };
   }
@@ -49,6 +55,8 @@ class UserModel {
       emergencyContact: (map['emergencyContact'] ?? '').toString(),
       createdAt: (map['createdAt'] ?? '').toString(),
       isActive: map['isActive'] == true || map['isActive'] == 1,
+      isBlocked: map['isBlocked'] == true || map['isBlocked'] == 1,
+      walletBalance: (map['walletBalance'] is num) ? (map['walletBalance'] as num).toDouble() : 0.0,
       role: (map['role'] ?? 'user').toString(),
     );
   }
@@ -63,6 +71,8 @@ class UserModel {
     String? emergencyContact,
     String? createdAt,
     bool? isActive,
+    bool? isBlocked,
+    double? walletBalance,
     String? role,
   }) {
     return UserModel(
@@ -75,6 +85,8 @@ class UserModel {
       emergencyContact: emergencyContact ?? this.emergencyContact,
       createdAt: createdAt ?? this.createdAt,
       isActive: isActive ?? this.isActive,
+      isBlocked: isBlocked ?? this.isBlocked,
+      walletBalance: walletBalance ?? this.walletBalance,
       role: role ?? this.role,
     );
   }

@@ -40,11 +40,11 @@ class RewardsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       appBar: AppBar(
         title: Text(
           'My Rewards & Coupons',
-          style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
+          style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -63,14 +63,14 @@ class RewardsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFFE91E63), Color(0xFF880E4F)],
+                  colors: [Color(0xFF7F00FD), Color(0xFF880E4F)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFE91E63).withValues(alpha: 0.3),
+                    color: const Color(0xFF7F00FD).withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -84,7 +84,7 @@ class RewardsScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Refer & Earn ₹50',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                           color: Colors.white,
@@ -98,7 +98,7 @@ class RewardsScreen extends StatelessWidget {
                         ),
                         child: Text(
                           'Wallet Cash',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
                         ),
                       ),
                     ],
@@ -106,7 +106,7 @@ class RewardsScreen extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     'Invite your friends & women colleagues to SheRide. You both receive ₹50 wallet credit on their first completed ride.',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.9),
                     ),
@@ -128,11 +128,11 @@ class RewardsScreen extends StatelessWidget {
                           children: [
                             Text(
                               'YOUR REFERRAL CODE',
-                              style: GoogleFonts.plusJakartaSans(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF757575)),
+                              style: GoogleFonts.inter(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF757575)),
                             ),
                             Text(
                               'SHERIDE987',
-                              style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w900, color: const Color(0xFFE91E63)),
+                              style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w900, color: const Color(0xFF7F00FD)),
                             ),
                           ],
                         ),
@@ -140,11 +140,11 @@ class RewardsScreen extends StatelessWidget {
                           onPressed: () {
                             Clipboard.setData(const ClipboardData(text: 'SHERIDE987'));
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Referral code copied to clipboard! 🌸'), backgroundColor: Color(0xFFE91E63)),
+                              const SnackBar(content: Text('Referral code copied to clipboard! 🌸'), backgroundColor: Color(0xFF7F00FD)),
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFE91E63),
+                            backgroundColor: const Color(0xFF7F00FD),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -163,7 +163,7 @@ class RewardsScreen extends StatelessWidget {
             // Promo Coupons Header
             Text(
               'Active Promo Coupons',
-              style: GoogleFonts.plusJakartaSans(
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF1A1A1A),
@@ -182,17 +182,17 @@ class RewardsScreen extends StatelessWidget {
                   boxShadow: [
                     BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
                   ],
-                  border: Border.all(color: const Color(0xFFFCE4EC)),
+                  border: Border.all(color: const Color(0xFFF0EEFD)),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF0F5),
+                        color: const Color(0xFFF0EEFD),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(Icons.percent_rounded, color: Color(0xFFE91E63), size: 24),
+                      child: const Icon(Icons.percent_rounded, color: Color(0xFF7F00FD), size: 24),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -204,15 +204,15 @@ class RewardsScreen extends StatelessWidget {
                             children: [
                               Text(
                                 c['code']!,
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w900,
-                                  color: const Color(0xFFE91E63),
+                                  color: const Color(0xFF7F00FD),
                                 ),
                               ),
                               Text(
                                 c['discount']!,
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                   color: const Color(0xFF2E7D32),
@@ -223,12 +223,12 @@ class RewardsScreen extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             c['desc']!,
-                            style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: const Color(0xFF555555)),
+                            style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF555555)),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             c['expiry']!,
-                            style: GoogleFonts.plusJakartaSans(fontSize: 10, color: const Color(0xFF9E9E9E)),
+                            style: GoogleFonts.inter(fontSize: 10, color: const Color(0xFF9E9E9E)),
                           ),
                         ],
                       ),

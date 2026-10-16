@@ -29,6 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  bool _isGoogleLoading = false;
+
   Future<void> _handleEmailLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -44,6 +46,37 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(authService.errorMessage ?? e.toString()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    final authService = context.read<AuthService>();
+    setState(() => _isGoogleLoading = true);
+    try {
+      final credential = await authService.signInWithGoogle();
+      if (!mounted) return;
+      setState(() => _isGoogleLoading = false);
+
+      if (credential != null && credential.user != null) {
+        final userName = credential.user?.displayName ?? 'Passenger';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome to SheRide, $userName! 🌸'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+        context.go('/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isGoogleLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authService.errorMessage ?? 'Google Sign-In was cancelled or failed'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -82,12 +115,12 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 16),
             Text(
               'Reset Password',
-              style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 4),
             Text(
               'Enter your registered email address to receive a secure password reset link.',
-              style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppColors.textSecondary),
+              style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             CustomTextField(
@@ -166,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Text(
                             title,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF1A1A1A),
@@ -175,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 2),
                           Text(
                             subtitle,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               color: const Color(0xFF757575),
@@ -212,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Text(
                             sec['title'] ?? '',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF1A1A1A),
@@ -221,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 6),
                           Text(
                             sec['content'] ?? '',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 12.5,
                               color: const Color(0xFF616161),
                               height: 1.45,
@@ -240,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(ctx),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE91E63),
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -248,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Text(
                       'I Understand & Agree',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
@@ -363,20 +396,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SheRideBannerLogo(width: 270),
                       const SizedBox(height: 18),
                       Text(
-                        'Welcome to SheRide',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 24,
+                        'Welcome to Lady Pilot',
+                        style: GoogleFonts.fraunces(
+                          fontSize: 26,
                           fontWeight: FontWeight.w900,
-                          color: const Color(0xFF1A1A1A),
+                          color: const Color(0xFF180D2B),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '100% Verified Female Captains • Safe & Reliable',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFFE91E63),
+                          color: AppColors.primary,
                         ),
                       ),
                       const SizedBox(height: 28),
@@ -391,7 +424,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               controller: _emailController,
                               label: 'Email Address',
                               hintText: 'user@example.com',
-                              prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFE91E63), size: 18),
+                              prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primary, size: 18),
                               keyboardType: TextInputType.emailAddress,
                               validator: (val) {
                                 if (val == null || !val.contains('@')) return 'Please enter a valid email address';
@@ -404,7 +437,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               label: 'Password',
                               hintText: '••••••••',
                               obscureText: _obscurePassword,
-                              prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFFE91E63), size: 18),
+                              prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 18),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -432,10 +465,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 child: Text(
                                   'Forgot Password?',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFFE91E63),
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               ),
@@ -460,7 +493,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
                               'OR',
-                              style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.grey.shade500),
+                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.grey.shade500),
                             ),
                           ),
                           Expanded(child: Divider(color: Colors.grey.shade300)),
@@ -471,28 +504,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Google Sign In Button with Google Logo
                       OutlinedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Google Sign-In: Authenticating account...'),
-                              backgroundColor: Color(0xFFE91E63),
-                            ),
-                          );
-                          context.go('/home');
-                        },
-                        icon: Image.asset(
-                          'assets/icons/google_logo.png',
-                          width: 22,
-                          height: 22,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.g_mobiledata_rounded,
-                            size: 26,
-                            color: Colors.red,
-                          ),
-                        ),
+                        onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
+                        icon: _isGoogleLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                              )
+                            : Image.asset(
+                                'assets/icons/google_logo.png',
+                                width: 22,
+                                height: 22,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.g_mobiledata_rounded,
+                                  size: 26,
+                                  color: Colors.red,
+                                ),
+                              ),
                         label: Text(
-                          'Continue with Google',
-                          style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
+                          _isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google',
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
                         ),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 48),
@@ -509,8 +540,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       Column(
                         children: [
                           Text(
-                            'By continuing, you agree to SheRide\'s',
-                            style: GoogleFonts.plusJakartaSans(
+                            'By continuing, you agree to Lady Pilot\'s',
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               color: const Color(0xFF9E9E9E),
                               fontWeight: FontWeight.w500,
@@ -526,12 +557,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 onTap: _showTermsModal,
                                 child: Text(
                                   'Terms & Conditions',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFFE91E63),
+                                    color: AppColors.primary,
                                     decoration: TextDecoration.underline,
-                                    decorationColor: const Color(0xFFE91E63),
+                                    decorationColor: AppColors.primary,
                                   ),
                                 ),
                               ),
@@ -543,12 +574,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 onTap: _showPrivacyPolicyModal,
                                 child: Text(
                                   'Privacy Policy',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFFE91E63),
+                                    color: AppColors.primary,
                                     decoration: TextDecoration.underline,
-                                    decorationColor: const Color(0xFFE91E63),
+                                    decorationColor: AppColors.primary,
                                   ),
                                 ),
                               ),
@@ -560,12 +591,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 onTap: _showSafetyPolicyModal,
                                 child: Text(
                                   'Safety Policy',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFFE91E63),
+                                    color: AppColors.primary,
                                     decoration: TextDecoration.underline,
-                                    decorationColor: const Color(0xFFE91E63),
+                                    decorationColor: AppColors.primary,
                                   ),
                                 ),
                               ),

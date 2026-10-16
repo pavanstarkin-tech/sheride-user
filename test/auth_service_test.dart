@@ -34,9 +34,9 @@ void main() {
     });
 
     test('Theme brand colors check', () {
-      expect(AppColors.primary.toARGB32(), 0xFFE91E63);
-      expect(AppColors.primaryLight.toARGB32(), 0xFFF8BBD0);
-      expect(AppColors.secondary.toARGB32(), 0xFFAD1457);
+      expect(AppColors.primary.toARGB32(), 0xFF7F00FD);
+      expect(AppColors.primaryLight.toARGB32(), 0xFFEDDCFF);
+      expect(AppColors.secondary.toARGB32(), 0xFFFFB001);
     });
 
     test('User copyWith updates fields correctly', () {

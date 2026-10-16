@@ -11,18 +11,7 @@ class SupportService {
     }
   }
 
-  static final List<SupportTicketModel> _localTickets = [
-    SupportTicketModel(
-      ticketId: 't_sample_1',
-      uid: 'user_1',
-      category: 'safety',
-      subject: 'Captain verification confirmation',
-      message: 'Can I verify the captain driver license number before onboarding?',
-      status: 'resolved',
-      createdAt: DateTime.now().subtract(const Duration(days: 2)).millisecondsSinceEpoch,
-      updatedAt: DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch,
-    ),
-  ];
+  static final List<SupportTicketModel> _localTickets = [];
 
   Future<SupportTicketModel> createTicket({
     required String uid,
@@ -59,7 +48,7 @@ class SupportService {
   Stream<List<SupportTicketModel>> streamTickets(String uid) {
     final db = _db;
     if (db == null) {
-      return Stream.value(_localTickets.where((t) => t.uid == uid || t.uid == 'user_1').toList());
+      return Stream.value(_localTickets.where((t) => t.uid == uid).toList());
     }
     return db.ref('supportTickets').orderByChild('uid').equalTo(uid).onValue.map((event) {
       if (event.snapshot.value != null) {
@@ -70,13 +59,13 @@ class SupportService {
         list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         return list;
       }
-      return _localTickets.where((t) => t.uid == uid || t.uid == 'user_1').toList();
+      return _localTickets.where((t) => t.uid == uid).toList();
     });
   }
 
   Future<List<SupportTicketModel>> getTickets(String uid) async {
     final db = _db;
-    if (db == null) return _localTickets.where((t) => t.uid == uid || t.uid == 'user_1').toList();
+    if (db == null) return _localTickets.where((t) => t.uid == uid).toList();
     try {
       final snap = await db.ref('supportTickets').orderByChild('uid').equalTo(uid).get();
       if (snap.exists && snap.value != null) {
@@ -88,6 +77,6 @@ class SupportService {
         return list;
       }
     } catch (_) {}
-    return _localTickets.where((t) => t.uid == uid || t.uid == 'user_1').toList();
+    return _localTickets.where((t) => t.uid == uid).toList();
   }
 }

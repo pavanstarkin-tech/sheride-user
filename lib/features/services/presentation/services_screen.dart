@@ -19,7 +19,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       'tagline': 'Solo Swift',
       'image': 'assets/images/vehicles/scooty.png',
       'badge': '🌸 Best Value',
-      'badgeColor': Color(0xFFE91E63),
+      'badgeColor': Color(0xFF7F00FD),
       'baseRate': 'From ₹20',
       'capacity': 1,
     },
@@ -69,7 +69,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       'tagline': 'Instant Pickup',
       'image': 'assets/images/vehicles/priority_auto.png',
       'badge': '⚡ Quick',
-      'badgeColor': Color(0xFFC2185B),
+      'badgeColor': Color(0xFF5C00BC),
       'baseRate': 'From ₹40',
       'capacity': 3,
     },
@@ -137,7 +137,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -153,7 +153,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     children: [
                       Text(
                         'All Services',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF1A1A1A),
@@ -162,7 +162,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       const SizedBox(height: 2),
                       Text(
                         'Choose from 10 specialized vehicle categories',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF757575),
@@ -173,11 +173,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF0F5),
+                      color: const Color(0xFFF0EEFD),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFF8BBD9)),
+                      border: Border.all(color: const Color(0xFFEDDCFF)),
                     ),
-                    child: const Icon(Icons.grid_view_rounded, size: 20, color: Color(0xFFE91E63)),
+                    child: const Icon(Icons.grid_view_rounded, size: 20, color: Color(0xFF7F00FD)),
                   ),
                 ],
               ),
@@ -210,7 +210,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             offset: const Offset(0, 2),
                           ),
                         ],
-                        border: Border.all(color: const Color(0xFFFCE4EC)),
+                        border: Border.all(color: const Color(0xFFF0EEFD)),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -222,7 +222,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                               child: Image.asset(
                                 v['image'] as String,
                                 fit: BoxFit.contain,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.electric_scooter_rounded, color: Color(0xFFE91E63), size: 26),
+                                errorBuilder: (_, __, ___) => const Icon(Icons.electric_scooter_rounded, color: Color(0xFF7F00FD), size: 26),
                               ),
                             ),
                           ),
@@ -231,7 +231,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                           // Name
                           Text(
                             v['name'] as String,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF1A1A1A),
@@ -245,7 +245,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                           const SizedBox(height: 2),
                           Text(
                             v['baseRate'] as String,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF2E7D32),

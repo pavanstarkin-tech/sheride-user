@@ -24,7 +24,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     final uid = authService.currentUser?.uid ?? 'guest_user';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: SafeArea(
         child: Column(
           children: [
@@ -55,7 +55,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                     child: Center(
                       child: Text(
                         'Ride History',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                           color: const Color(0xFF1A1A1A),
@@ -109,7 +109,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                           const SizedBox(height: 12),
                           Text(
                             'No rides yet',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF1A1A1A),
@@ -118,7 +118,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Your completed and cancelled rides will appear here.',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               color: const Color(0xFF757575),
                             ),
@@ -162,12 +162,12 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                                 width: 40,
                                 height: 40,
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFFFCE4EC),
+                                  color: Color(0xFFF0EEFD),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   vehicleIcon,
-                                  color: const Color(0xFFE91E63),
+                                  color: const Color(0xFF7F00FD),
                                   size: 22,
                                 ),
                               ),
@@ -178,7 +178,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                                   children: [
                                     Text(
                                       ride.drop.address,
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: GoogleFonts.inter(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w800,
                                         color: const Color(0xFF1A1A1A),
@@ -189,7 +189,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                                     const SizedBox(height: 2),
                                     Text(
                                       dateStr,
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: GoogleFonts.inter(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                         color: const Color(0xFF757575),
@@ -198,7 +198,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                                     const SizedBox(height: 2),
                                     Text(
                                       '₹${ride.fare.toStringAsFixed(1)} • ${ride.status[0].toUpperCase()}${ride.status.substring(1)}',
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: GoogleFonts.inter(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w700,
                                         color: isCompleted ? const Color(0xFF2E7D32) : const Color(0xFFE53935),
@@ -230,7 +230,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                       const SizedBox(width: 4),
                       Text(
                         'Looking for rides older than 90 days?',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF757575),
@@ -247,10 +247,10 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                     },
                     child: Text(
                       'Request Ride History',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFFE91E63),
+                        color: const Color(0xFF7F00FD),
                       ),
                     ),
                   ),
@@ -272,13 +272,13 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFE91E63) : Colors.transparent,
+            color: isSelected ? const Color(0xFF7F00FD) : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Center(
             child: Text(
               label,
-              style: GoogleFonts.plusJakartaSans(
+              style: GoogleFonts.inter(
                 fontSize: 12.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? Colors.white : const Color(0xFF757575),

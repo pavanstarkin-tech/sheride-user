@@ -67,7 +67,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: notif.isRead ? Colors.white : Colors.pink.shade50.withValues(alpha: 0.5),
+                    color: notif.isRead ? Colors.white : const Color(0xFFF0EEFD).withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: notif.isRead ? Colors.grey.shade200 : AppColors.primary.withValues(alpha: 0.3)),
                     boxShadow: [

@@ -87,7 +87,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully! 🌸'),
-            backgroundColor: Color(0xFFE91E63),
+            backgroundColor: Color(0xFF7F00FD),
           ),
         );
         context.pop(true);
@@ -119,7 +119,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 16),
             Text(
               'Choose Profile Avatar 🌸',
-              style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
+              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -136,7 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? const Color(0xFFE91E63) : Colors.transparent,
+                        color: isSelected ? const Color(0xFF7F00FD) : Colors.transparent,
                         width: 3,
                       ),
                     ),
@@ -158,11 +158,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       appBar: AppBar(
         title: Text(
           'Personal Information',
-          style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
+          style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -172,7 +172,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFE91E63)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF7F00FD)))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Form(
@@ -186,10 +186,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFE91E63), width: 3),
+                              border: Border.all(color: const Color(0xFF7F00FD), width: 3),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFE91E63).withValues(alpha: 0.2),
+                                  color: const Color(0xFF7F00FD).withValues(alpha: 0.2),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -197,7 +197,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                             child: CircleAvatar(
                               radius: 48,
-                              backgroundColor: const Color(0xFFFCE4EC),
+                              backgroundColor: const Color(0xFFF0EEFD),
                               backgroundImage: NetworkImage(_selectedAvatar),
                             ),
                           ),
@@ -209,7 +209,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFFE91E63),
+                                  color: Color(0xFF7F00FD),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.camera_alt_rounded, size: 18, color: Colors.white),
@@ -222,10 +222,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 8),
                     TextButton.icon(
                       onPressed: _showAvatarPickerModal,
-                      icon: const Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFFE91E63)),
+                      icon: const Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFF7F00FD)),
                       label: Text(
                         'Change Profile Photo',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFFE91E63)),
+                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF7F00FD)),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -246,7 +246,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           _buildFieldLabel('Full Name'),
                           TextFormField(
                             controller: _nameController,
-                            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                             decoration: _buildInputDecoration('Enter your full name', Icons.person_outline_rounded),
                             validator: (v) => v?.trim().isEmpty == true ? 'Please enter your name' : null,
                           ),
@@ -256,7 +256,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                             decoration: _buildInputDecoration('Enter your email address', Icons.mail_outline_rounded),
                             validator: (v) => v?.contains('@') == false ? 'Please enter a valid email' : null,
                           ),
@@ -266,7 +266,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           TextFormField(
                             controller: _phoneController,
                             keyboardType: TextInputType.phone,
-                            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                             decoration: _buildInputDecoration('10-digit mobile number', Icons.phone_outlined),
                           ),
                           const SizedBox(height: 16),
@@ -275,7 +275,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           TextFormField(
                             controller: _emergencyPhoneController,
                             keyboardType: TextInputType.phone,
-                            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+                            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
                             decoration: _buildInputDecoration('Guardian / Parent mobile number', Icons.security_rounded),
                           ),
                         ],
@@ -290,7 +290,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: ElevatedButton(
                         onPressed: _isSaving ? null : _saveProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFE91E63),
+                          backgroundColor: const Color(0xFF7F00FD),
                           foregroundColor: Colors.white,
                           elevation: 3,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
@@ -299,7 +299,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                             : Text(
                                 'Save Changes',
-                                style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800),
+                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
                               ),
                       ),
                     ),
@@ -315,7 +315,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         label,
-        style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A1A)),
+        style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A1A)),
       ),
     );
   }
@@ -329,7 +329,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFEEEEEE))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFFE91E63), width: 1.5)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF7F00FD), width: 1.5)),
     );
   }
 }

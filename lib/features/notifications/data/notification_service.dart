@@ -15,24 +15,7 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _localNotifs = FlutterLocalNotificationsPlugin();
   static bool _isPluginInitialized = false;
 
-  static final List<NotificationModel> _localNotifications = [
-    NotificationModel(
-      notificationId: 'notif_welcome',
-      title: 'Welcome to SheRide 🌸',
-      body: 'Your safe rides with 100% verified women captains start here.',
-      type: 'system',
-      isRead: true,
-      createdAt: DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch,
-    ),
-    NotificationModel(
-      notificationId: 'notif_offer',
-      title: 'Special Offer Available! 🎉',
-      body: 'Get FLAT 50% OFF on your rides using coupon code SHERIDE50.',
-      type: 'offer',
-      isRead: false,
-      createdAt: DateTime.now().subtract(const Duration(hours: 4)).millisecondsSinceEpoch,
-    ),
-  ];
+  static final List<NotificationModel> _localNotifications = [];
 
   static Future<void> initializeLocalNotifications() async {
     if (_isPluginInitialized) return;

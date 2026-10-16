@@ -52,35 +52,35 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Add Money to SheRide Wallet',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 18,
+                'Add Money to Lady Pilot Wallet',
+                style: GoogleFonts.fraunces(
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1A1A1A),
+                  color: const Color(0xFF180D2B),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Enjoy instant 1-tap checkout on all rides',
-                style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF757575)),
+                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF757575)),
               ),
               const SizedBox(height: 20),
               TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                style: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.bold, color: const Color(0xFFE91E63)),
+                style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: const Color(0xFF7F00FD)),
                 decoration: InputDecoration(
                   prefixText: '₹ ',
-                  prefixStyle: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.bold, color: const Color(0xFFE91E63)),
+                  prefixStyle: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: const Color(0xFF7F00FD)),
                   filled: true,
-                  fillColor: const Color(0xFFFFF0F5),
+                  fillColor: const Color(0xFFF0EEFD),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFFF8BBD9)),
+                    borderSide: const BorderSide(color: Color(0xFFEDDCFF)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFFE91E63), width: 2),
+                    borderSide: const BorderSide(color: Color(0xFF7F00FD), width: 2),
                   ),
                 ),
               ),
@@ -89,8 +89,8 @@ class _WalletScreenState extends State<WalletScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [100, 200, 500, 1000].map((amt) {
                   return ActionChip(
-                    label: Text('+₹$amt', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
-                    backgroundColor: const Color(0xFFFCE4EC),
+                    label: Text('+₹$amt', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    backgroundColor: const Color(0xFFF0EEFD),
                     onPressed: () {
                       setModalState(() {
                         amountController.text = amt.toString();
@@ -113,8 +113,8 @@ class _WalletScreenState extends State<WalletScreen> {
                       if (mounted) {
                         messenger.showSnackBar(
                           SnackBar(
-                            content: Text('₹${entered.toStringAsFixed(0)} added successfully to SheRide Wallet! 🌸'),
-                            backgroundColor: const Color(0xFFE91E63),
+                            content: Text('₹${entered.toStringAsFixed(0)} added successfully to Lady Pilot Wallet! 💜'),
+                            backgroundColor: const Color(0xFF7F00FD),
                           ),
                         );
                         setState(() {});
@@ -122,11 +122,11 @@ class _WalletScreenState extends State<WalletScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE91E63),
-                    foregroundColor: Colors.white,
+                    backgroundColor: const Color(0xFFFFB001),
+                    foregroundColor: const Color(0xFF180D2B),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                   ),
-                  child: Text('Proceed to Pay', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: Text('Proceed to Pay', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF180D2B))),
                 ),
               ),
             ],
@@ -141,7 +141,7 @@ class _WalletScreenState extends State<WalletScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Promo code "$code" copied! Apply it on your next ride 🌸'),
-        backgroundColor: const Color(0xFFE91E63),
+        backgroundColor: const Color(0xFF7F00FD),
       ),
     );
   }
@@ -151,7 +151,7 @@ class _WalletScreenState extends State<WalletScreen> {
     final uid = _walletService.currentUid;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -183,7 +183,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     child: Center(
                       child: Text(
                         'My Wallet',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                           color: const Color(0xFF1A1A1A),
@@ -206,14 +206,14 @@ class _WalletScreenState extends State<WalletScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFFE91E63), Color(0xFFC2185B)],
+                        colors: [Color(0xFF7F00FD), Color(0xFF5C00BC)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(22),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFE91E63).withValues(alpha: 0.3),
+                          color: const Color(0xFF7F00FD).withValues(alpha: 0.3),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -227,7 +227,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           children: [
                             Text(
                               '₹${balance.toInt()}',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontSize: 32,
                                 fontWeight: FontWeight.w900,
@@ -236,7 +236,7 @@ class _WalletScreenState extends State<WalletScreen> {
                             const SizedBox(height: 2),
                             Text(
                               'Available Balance',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -249,7 +249,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: const Color(0xFFFFB001),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -261,10 +261,10 @@ class _WalletScreenState extends State<WalletScreen> {
                             ),
                             child: Text(
                               '+ Add Money',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
-                                color: const Color(0xFFE91E63),
+                                color: const Color(0xFF180D2B),
                               ),
                             ),
                           ),
@@ -303,8 +303,8 @@ class _WalletScreenState extends State<WalletScreen> {
                     _buildPaymentIconItem(
                       icon: Icons.credit_card_rounded,
                       label: 'Card',
-                      iconColor: const Color(0xFFE91E63),
-                      bgColor: const Color(0xFFFCE4EC),
+                      iconColor: const Color(0xFF7F00FD),
+                      bgColor: const Color(0xFFF0EEFD),
                       onTap: _showAddMoneyDialog,
                     ),
                     _buildPaymentIconItem(
@@ -317,8 +317,8 @@ class _WalletScreenState extends State<WalletScreen> {
                     _buildPaymentIconItem(
                       icon: Icons.card_giftcard_rounded,
                       label: 'Gift Card',
-                      iconColor: const Color(0xFFE91E63),
-                      bgColor: const Color(0xFFFCE4EC),
+                      iconColor: const Color(0xFF7F00FD),
+                      bgColor: const Color(0xFFF0EEFD),
                       onTap: _showAddMoneyDialog,
                     ),
                   ],
@@ -332,7 +332,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 children: [
                   Text(
                     'Offers for You',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF1A1A1A),
@@ -358,7 +358,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       child: Center(
                         child: Text(
                           'No offers available right now',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 13,
                             color: const Color(0xFF757575),
                             fontWeight: FontWeight.w500,
@@ -375,9 +375,9 @@ class _WalletScreenState extends State<WalletScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFF0F5),
+                          color: const Color(0xFFF0EEFD),
                           borderRadius: BorderRadius.circular(22),
-                          border: Border.all(color: const Color(0xFFF8BBD9)),
+                          border: Border.all(color: const Color(0xFFEDDCFF)),
                         ),
                         child: Row(
                           children: [
@@ -387,16 +387,16 @@ class _WalletScreenState extends State<WalletScreen> {
                                 children: [
                                   Text(
                                     featured.title,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w900,
-                                      color: const Color(0xFFE91E63),
+                                      color: const Color(0xFF7F00FD),
                                     ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     featured.description,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                       color: const Color(0xFF757575),
@@ -410,14 +410,14 @@ class _WalletScreenState extends State<WalletScreen> {
                                       decoration: BoxDecoration(
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: const Color(0xFFE91E63)),
+                                        border: Border.all(color: const Color(0xFF7F00FD)),
                                       ),
                                       child: Text(
                                         'Use code: ${featured.code}',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: GoogleFonts.inter(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
-                                          color: const Color(0xFFE91E63),
+                                          color: const Color(0xFF7F00FD),
                                         ),
                                       ),
                                     ),
@@ -429,10 +429,10 @@ class _WalletScreenState extends State<WalletScreen> {
                               width: 64,
                               height: 64,
                               decoration: const BoxDecoration(
-                                color: Color(0xFFFCE4EC),
+                                color: Color(0xFFF0EEFD),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.card_giftcard_rounded, color: Color(0xFFE91E63), size: 36),
+                              child: const Icon(Icons.card_giftcard_rounded, color: Color(0xFF7F00FD), size: 36),
                             ),
                           ],
                         ),
@@ -443,7 +443,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'More Offers',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF1A1A1A),
@@ -492,7 +492,7 @@ class _WalletScreenState extends State<WalletScreen> {
           const SizedBox(height: 6),
           Text(
             label,
-            style: GoogleFonts.plusJakartaSans(
+            style: GoogleFonts.inter(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF1A1A1A),
@@ -520,10 +520,10 @@ class _WalletScreenState extends State<WalletScreen> {
               width: 38,
               height: 38,
               decoration: const BoxDecoration(
-                color: Color(0xFFFCE4EC),
+                color: Color(0xFFF0EEFD),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: const Color(0xFFE91E63), size: 18),
+              child: Icon(icon, color: const Color(0xFF7F00FD), size: 18),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -532,7 +532,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF1A1A1A),
@@ -540,7 +540,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                   Text(
                     subtitle,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF757575),

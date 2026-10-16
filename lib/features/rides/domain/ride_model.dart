@@ -50,6 +50,7 @@ class RideModel {
   final int? completedAt;
   final int? cancelledAt;
   final String? cancelledBy; // user | rider | system
+  final String? cancelReason;
   final String paymentMethod; // cash | wallet | upi
   final String otp; // 4-digit start OTP
 
@@ -77,6 +78,7 @@ class RideModel {
     this.completedAt,
     this.cancelledAt,
     this.cancelledBy,
+    this.cancelReason,
     this.paymentMethod = 'cash',
     required this.otp,
     this.riderName,
@@ -104,6 +106,7 @@ class RideModel {
       'completedAt': completedAt,
       'cancelledAt': cancelledAt,
       'cancelledBy': cancelledBy,
+      if (cancelReason != null) 'cancelReason': cancelReason,
       'paymentMethod': paymentMethod,
       'otp': otp,
       if (riderName != null) 'riderName': riderName,
@@ -132,6 +135,7 @@ class RideModel {
       completedAt: (map['completedAt'] is num) ? (map['completedAt'] as num).toInt() : null,
       cancelledAt: (map['cancelledAt'] is num) ? (map['cancelledAt'] as num).toInt() : null,
       cancelledBy: map['cancelledBy']?.toString(),
+      cancelReason: map['cancelReason']?.toString(),
       paymentMethod: (map['paymentMethod'] ?? 'cash').toString(),
       otp: (map['otp'] ?? '1234').toString(),
       riderName: map['riderName']?.toString(),
@@ -159,6 +163,7 @@ class RideModel {
     int? completedAt,
     int? cancelledAt,
     String? cancelledBy,
+    String? cancelReason,
     String? paymentMethod,
     String? otp,
     String? riderName,
@@ -184,6 +189,7 @@ class RideModel {
       completedAt: completedAt ?? this.completedAt,
       cancelledAt: cancelledAt ?? this.cancelledAt,
       cancelledBy: cancelledBy ?? this.cancelledBy,
+      cancelReason: cancelReason ?? this.cancelReason,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       otp: otp ?? this.otp,
       riderName: riderName ?? this.riderName,

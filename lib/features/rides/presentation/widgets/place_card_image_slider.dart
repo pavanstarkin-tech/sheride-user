@@ -82,9 +82,9 @@ class _PlaceCardImageSliderState extends State<PlaceCardImageSlider> {
               _getCategoryFallbackPhoto(widget.placeName),
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
-                color: const Color(0xFFFCE4EC),
+                color: const Color(0xFFF0EEFD),
                 child: const Center(
-                  child: Icon(Icons.location_city_rounded, color: Color(0xFFE91E63), size: 26),
+                  child: Icon(Icons.location_city_rounded, color: Color(0xFF7F00FD), size: 26),
                 ),
               ),
             ),
@@ -98,7 +98,7 @@ class _PlaceCardImageSliderState extends State<PlaceCardImageSlider> {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFFE91E63),
+                      color: Color(0xFF7F00FD),
                     ),
                   ),
                 ),

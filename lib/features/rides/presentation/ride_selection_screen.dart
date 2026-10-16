@@ -1,17 +1,19 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart' as ll;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mb;
 import 'package:provider/provider.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/widgets/sheride_interactive_map.dart';
 import '../../wallet/data/offer_service.dart';
 import '../../wallet/data/wallet_service.dart';
 import '../../wallet/domain/offer_model.dart';
@@ -61,6 +63,14 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
   mb.PointAnnotationManager? _pointAnnotationManager;
   MapboxRouteInfo? _routeInfo;
   bool _isLoadingRoute = true;
+  List<NearbyRiderMarker> _nearbyVehicles = [];
+
+  // Real-time Admin Vehicle Availability Settings & Custom Pricing Rates
+  Map<String, bool> _vehicleAvailability = {};
+  Map<String, Map<String, dynamic>> _vehicleCustomSettings = {};
+  double _adminSurgeMultiplier = 1.0;
+  StreamSubscription<DatabaseEvent>? _vehicleSettingsSub;
+  StreamSubscription<DatabaseEvent>? _appConfigSub;
 
   @override
   void initState() {
@@ -90,6 +100,70 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
 
     _options = _rideService.calculateFares(_pickupLocation, _dropLocation);
     _loadMapboxDrivingRoute();
+    _loadNearbyVehicles();
+    _listenToVehicleSettings();
+  }
+
+  void _listenToVehicleSettings() {
+    _vehicleSettingsSub = FirebaseDatabase.instance.ref('settings/vehicleTypes').onValue.listen((event) {
+      if (event.snapshot.exists && event.snapshot.value != null) {
+        final data = event.snapshot.value;
+        final availability = <String, bool>{};
+        final customSettings = <String, Map<String, dynamic>>{};
+        if (data is Map) {
+          data.forEach((k, v) {
+            if (v is Map) {
+              final id = k.toString();
+              final map = Map<String, dynamic>.from(v);
+              final active = map['isActive'] != false;
+              availability[id] = active;
+              customSettings[id] = map;
+            }
+          });
+        }
+        if (mounted) {
+          setState(() {
+            _vehicleAvailability = availability;
+            _vehicleCustomSettings = customSettings;
+            if (_routeInfo != null) {
+              _options = _recalculateFaresWithRoadDistance(_routeInfo!.distanceKm, _routeInfo!.durationMin);
+            }
+          });
+        }
+      }
+    });
+
+    _appConfigSub = FirebaseDatabase.instance.ref('settings/appConfig').onValue.listen((event) {
+      if (event.snapshot.exists && event.snapshot.value != null) {
+        final data = Map<dynamic, dynamic>.from(event.snapshot.value as Map);
+        final surge = (data['surgeMultiplier'] as num?)?.toDouble() ?? 1.0;
+        if (mounted) {
+          setState(() {
+            _adminSurgeMultiplier = (surge > 0) ? surge : 1.0;
+            if (_routeInfo != null) {
+              _options = _recalculateFaresWithRoadDistance(_routeInfo!.distanceKm, _routeInfo!.durationMin);
+            }
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _loadNearbyVehicles() async {
+    try {
+      final vehicles = await _rideService.getNearbyVehicles(_pickupLocation);
+      if (mounted) {
+        setState(() {
+          _nearbyVehicles = vehicles;
+          if (_routeInfo != null) {
+            _options = _recalculateFaresWithRoadDistance(_routeInfo!.distanceKm, _routeInfo!.durationMin);
+          }
+        });
+        _drawRouteAndFitCamera();
+      }
+    } catch (e) {
+      debugPrint("Error loading nearby vehicles in ride selection: $e");
+    }
   }
 
   @override
@@ -97,6 +171,8 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
     _radarPulseController.dispose();
     _activeRideSub?.cancel();
     _searchTimer?.cancel();
+    _vehicleSettingsSub?.cancel();
+    _appConfigSub?.cancel();
     super.dispose();
   }
 
@@ -137,158 +213,313 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
   }
 
   List<VehicleFareOption> _recalculateFaresWithRoadDistance(double distKm, int durationMin) {
+    int countFor(String key) {
+      if (_nearbyVehicles.isEmpty) return 3;
+      final c = _nearbyVehicles.where((v) {
+        if (key == 'scooty') return v.vehicleType.contains('scoot');
+        if (key == 'bike') return v.vehicleType.contains('bike');
+        if (key == 'auto') return v.vehicleType.contains('auto');
+        if (key == 'car') return v.vehicleType.contains('car') || v.vehicleType.contains('cab');
+        return true;
+      }).length;
+      return max(1, c);
+    }
+
+    int minEtaFor(String key, int defaultEta) {
+      if (_nearbyVehicles.isEmpty) return defaultEta;
+      final matching = _nearbyVehicles.where((v) {
+        if (key == 'scooty') return v.vehicleType.contains('scoot');
+        if (key == 'bike') return v.vehicleType.contains('bike');
+        if (key == 'auto') return v.vehicleType.contains('auto');
+        if (key == 'car') return v.vehicleType.contains('car') || v.vehicleType.contains('cab');
+        return true;
+      }).toList();
+      if (matching.isEmpty) return defaultEta;
+      return matching.map((v) => v.etaMinutes).reduce(min);
+    }
+
+    double computeVehicleFare(
+      String id, {
+      required double defaultBase,
+      required double defaultPerKm,
+      required double defaultPerMin,
+      required double defaultMinFare,
+    }) {
+      final setting = _vehicleCustomSettings[id];
+      final base = (setting?['baseFare'] as num?)?.toDouble() ?? defaultBase;
+      final perKm = (setting?['perKmRate'] as num?)?.toDouble() ?? defaultPerKm;
+      final perMin = (setting?['perMinuteRate'] as num?)?.toDouble() ?? defaultPerMin;
+      final minFare = (setting?['minimumFare'] as num?)?.toDouble() ?? defaultMinFare;
+
+      final raw = base + (distKm * perKm) + (durationMin * perMin);
+      final withSurge = raw * _adminSurgeMultiplier;
+      return max(minFare, withSurge).roundToDouble();
+    }
+
+    bool isVehicleAvailable(String id) {
+      if (_vehicleAvailability.containsKey(id)) {
+        return _vehicleAvailability[id]!;
+      }
+      return true;
+    }
+
     return [
       VehicleFareOption(
         id: 'scooty',
-        name: 'Scooty',
-        subtitle: 'Solo Swift & Affordable',
-        etaMin: 2,
-        capacity: 1,
-        fare: max(25.0, (20.0 + (distKm * 9.0)).roundToDouble()),
+        name: (_vehicleCustomSettings['scooty']?['name'] as String?) ?? 'Scooty',
+        subtitle: (_vehicleCustomSettings['scooty']?['tagline'] as String?) ?? 'Solo Swift & Affordable',
+        etaMin: minEtaFor('scooty', 2),
+        capacity: (_vehicleCustomSettings['scooty']?['capacity'] as num?)?.toInt() ?? 1,
+        fare: computeVehicleFare('scooty', defaultBase: 20.0, defaultPerKm: 9.0, defaultPerMin: 1.0, defaultMinFare: 25.0),
         distanceKm: distKm,
         durationMin: durationMin,
         icon: 'scooter',
         imageUrl: 'assets/images/vehicles/scooty.png',
         isElectric: false,
-        badge: '⭐ Best Value',
-        nearbyCount: 4,
+        badge: (_vehicleCustomSettings['scooty']?['badge'] as String?) ?? '⭐ Best Value',
+        nearbyCount: countFor('scooty'),
+        isAvailable: isVehicleAvailable('scooty'),
       ),
       VehicleFareOption(
         id: 'electric_scooty',
-        name: 'Electric Scooty',
-        subtitle: '100% Eco-friendly & Silent',
-        etaMin: 3,
-        capacity: 1,
-        fare: max(28.0, (22.0 + (distKm * 8.5)).roundToDouble()),
+        name: (_vehicleCustomSettings['electric_scooty']?['name'] as String?) ?? 'Electric Scooty',
+        subtitle: (_vehicleCustomSettings['electric_scooty']?['tagline'] as String?) ?? '100% Eco-friendly & Silent',
+        etaMin: minEtaFor('scooty', 3),
+        capacity: (_vehicleCustomSettings['electric_scooty']?['capacity'] as num?)?.toInt() ?? 1,
+        fare: computeVehicleFare('electric_scooty', defaultBase: 25.0, defaultPerKm: 10.0, defaultPerMin: 1.2, defaultMinFare: 30.0),
         distanceKm: distKm,
         durationMin: durationMin,
         icon: 'scooter',
         imageUrl: 'assets/images/vehicles/electric_scooty.png',
         isElectric: true,
-        badge: '⚡ 100% Electric',
-        nearbyCount: 5,
+        badge: (_vehicleCustomSettings['electric_scooty']?['badge'] as String?) ?? '⚡ 100% Electric',
+        nearbyCount: countFor('scooty'),
+        isAvailable: isVehicleAvailable('electric_scooty'),
       ),
       VehicleFareOption(
         id: 'bike',
-        name: 'Bike',
-        subtitle: 'Beat Traffic Fast',
-        etaMin: 3,
-        capacity: 1,
-        fare: max(30.0, (25.0 + (distKm * 10.5)).roundToDouble()),
+        name: (_vehicleCustomSettings['bike']?['name'] as String?) ?? 'Bike',
+        subtitle: (_vehicleCustomSettings['bike']?['tagline'] as String?) ?? 'Beat Traffic Fast',
+        etaMin: minEtaFor('bike', 2),
+        capacity: (_vehicleCustomSettings['bike']?['capacity'] as num?)?.toInt() ?? 1,
+        fare: computeVehicleFare('bike', defaultBase: 25.0, defaultPerKm: 11.0, defaultPerMin: 1.3, defaultMinFare: 30.0),
         distanceKm: distKm,
         durationMin: durationMin,
         icon: 'bike',
         imageUrl: 'assets/images/vehicles/bike.png',
         isElectric: false,
-        badge: '⚡ Fast Commute',
-        nearbyCount: 3,
+        badge: (_vehicleCustomSettings['bike']?['badge'] as String?) ?? '⚡ Fast Commute',
+        nearbyCount: countFor('bike'),
+        isAvailable: isVehicleAvailable('bike'),
       ),
       VehicleFareOption(
         id: 'priority_bike',
-        name: 'Priority Bike',
-        subtitle: 'Top-Rated Captain Express',
-        etaMin: 2,
-        capacity: 1,
-        fare: max(40.0, (35.0 + (distKm * 12.5)).roundToDouble()),
+        name: (_vehicleCustomSettings['priority_bike']?['name'] as String?) ?? 'Priority Bike',
+        subtitle: (_vehicleCustomSettings['priority_bike']?['tagline'] as String?) ?? 'Top-Rated Captain Express',
+        etaMin: minEtaFor('bike', 2),
+        capacity: (_vehicleCustomSettings['priority_bike']?['capacity'] as num?)?.toInt() ?? 1,
+        fare: computeVehicleFare('priority_bike', defaultBase: 35.0, defaultPerKm: 13.0, defaultPerMin: 1.6, defaultMinFare: 40.0),
         distanceKm: distKm,
         durationMin: durationMin,
         icon: 'bike',
         imageUrl: 'assets/images/vehicles/priority_bike.png',
         isElectric: false,
-        badge: '⭐ VIP Express',
-        nearbyCount: 3,
+        badge: (_vehicleCustomSettings['priority_bike']?['badge'] as String?) ?? '⭐ VIP Express',
+        nearbyCount: countFor('bike'),
+        isAvailable: isVehicleAvailable('priority_bike'),
       ),
       VehicleFareOption(
         id: 'auto',
-        name: 'Auto',
-        subtitle: 'Safe, iconic 3-wheeler',
-        etaMin: 4,
-        capacity: 3,
-        fare: max(40.0, (30.0 + (distKm * 13.0)).roundToDouble()),
+        name: (_vehicleCustomSettings['auto']?['name'] as String?) ?? 'Auto',
+        subtitle: (_vehicleCustomSettings['auto']?['tagline'] as String?) ?? 'Safe, iconic 3-wheeler',
+        etaMin: minEtaFor('auto', 3),
+        capacity: (_vehicleCustomSettings['auto']?['capacity'] as num?)?.toInt() ?? 3,
+        fare: computeVehicleFare('auto', defaultBase: 30.0, defaultPerKm: 13.0, defaultPerMin: 1.6, defaultMinFare: 40.0),
         distanceKm: distKm,
         durationMin: durationMin,
         icon: 'auto',
         imageUrl: 'assets/images/vehicles/auto.png',
         isElectric: false,
-        badge: '🌱 Everyday Favorite',
-        nearbyCount: 4,
+        badge: (_vehicleCustomSettings['auto']?['badge'] as String?) ?? '🌱 Safe & Reliable',
+        nearbyCount: countFor('auto'),
+        isAvailable: isVehicleAvailable('auto'),
       ),
       VehicleFareOption(
         id: 'priority_auto',
-        name: 'Priority Auto',
-        subtitle: 'Minimal Wait Times',
-        etaMin: 2,
-        capacity: 3,
-        fare: max(48.0, (38.0 + (distKm * 14.5)).roundToDouble()),
+        name: (_vehicleCustomSettings['priority_auto']?['name'] as String?) ?? 'Priority Auto',
+        subtitle: (_vehicleCustomSettings['priority_auto']?['tagline'] as String?) ?? 'Minimal Wait Times',
+        etaMin: minEtaFor('auto', 2),
+        capacity: (_vehicleCustomSettings['priority_auto']?['capacity'] as num?)?.toInt() ?? 3,
+        fare: computeVehicleFare('priority_auto', defaultBase: 40.0, defaultPerKm: 15.0, defaultPerMin: 1.8, defaultMinFare: 50.0),
         distanceKm: distKm,
         durationMin: durationMin,
         icon: 'auto',
         imageUrl: 'assets/images/vehicles/priority_auto.png',
         isElectric: false,
-        badge: '⚡ Quick Auto',
-        nearbyCount: 3,
+        badge: (_vehicleCustomSettings['priority_auto']?['badge'] as String?) ?? '🚀 Express Dispatch',
+        nearbyCount: countFor('auto'),
+        isAvailable: isVehicleAvailable('priority_auto'),
       ),
       VehicleFareOption(
         id: 'premium_auto',
-        name: 'Premium Auto',
-        subtitle: 'Luxury Cushioned Ride',
-        etaMin: 3,
-        capacity: 3,
-        fare: max(55.0, (45.0 + (distKm * 15.5)).roundToDouble()),
+        name: (_vehicleCustomSettings['premium_auto']?['name'] as String?) ?? 'Premium Auto',
+        subtitle: (_vehicleCustomSettings['premium_auto']?['tagline'] as String?) ?? 'Luxury Cushioned Ride',
+        etaMin: minEtaFor('auto', 3),
+        capacity: (_vehicleCustomSettings['premium_auto']?['capacity'] as num?)?.toInt() ?? 3,
+        fare: computeVehicleFare('premium_auto', defaultBase: 45.0, defaultPerKm: 16.0, defaultPerMin: 2.0, defaultMinFare: 55.0),
         distanceKm: distKm,
         durationMin: durationMin,
         icon: 'auto',
         imageUrl: 'assets/images/vehicles/premium_auto.png',
         isElectric: false,
-        badge: '✨ Executive Auto',
-        nearbyCount: 2,
+        badge: (_vehicleCustomSettings['premium_auto']?['badge'] as String?) ?? '👑 Premium Fleet',
+        nearbyCount: countFor('auto'),
+        isAvailable: isVehicleAvailable('premium_auto'),
       ),
       VehicleFareOption(
         id: 'mini_car',
-        name: 'Mini Car',
-        subtitle: 'AC Hatchback Comfort',
-        etaMin: 5,
-        capacity: 4,
-        fare: max(75.0, (65.0 + (distKm * 16.0)).roundToDouble()),
+        name: (_vehicleCustomSettings['mini_car']?['name'] as String?) ?? 'Mini Car',
+        subtitle: (_vehicleCustomSettings['mini_car']?['tagline'] as String?) ?? 'AC Hatchback Comfort',
+        etaMin: minEtaFor('car', 4),
+        capacity: (_vehicleCustomSettings['mini_car']?['capacity'] as num?)?.toInt() ?? 4,
+        fare: computeVehicleFare('mini_car', defaultBase: 55.0, defaultPerKm: 17.0, defaultPerMin: 2.2, defaultMinFare: 75.0),
         distanceKm: distKm,
         durationMin: durationMin,
         icon: 'cab_economy',
         imageUrl: 'assets/images/vehicles/mini_car.png',
         isElectric: false,
-        badge: '❄️ Chilled AC',
-        nearbyCount: 3,
+        badge: (_vehicleCustomSettings['mini_car']?['badge'] as String?) ?? '❄️ AC Hatchback',
+        nearbyCount: countFor('car'),
+        isAvailable: isVehicleAvailable('mini_car'),
       ),
       VehicleFareOption(
         id: 'premium_car',
-        name: 'Premium Car',
-        subtitle: 'Executive Prime Sedan',
-        etaMin: 5,
-        capacity: 4,
-        fare: max(120.0, (95.0 + (distKm * 21.0)).roundToDouble()),
+        name: (_vehicleCustomSettings['premium_car']?['name'] as String?) ?? 'Premium Car',
+        subtitle: (_vehicleCustomSettings['premium_car']?['tagline'] as String?) ?? 'Executive Prime Sedan',
+        etaMin: minEtaFor('car', 5),
+        capacity: (_vehicleCustomSettings['premium_car']?['capacity'] as num?)?.toInt() ?? 4,
+        fare: computeVehicleFare('premium_car', defaultBase: 85.0, defaultPerKm: 22.0, defaultPerMin: 2.8, defaultMinFare: 120.0),
         distanceKm: distKm,
         durationMin: durationMin,
         icon: 'cab_premium',
         imageUrl: 'assets/images/vehicles/premium_car.png',
         isElectric: false,
-        badge: '👑 Luxury Sedan',
-        nearbyCount: 2,
+        badge: (_vehicleCustomSettings['premium_car']?['badge'] as String?) ?? '✨ Executive Comfort',
+        nearbyCount: countFor('car'),
+        isAvailable: isVehicleAvailable('premium_car'),
       ),
       VehicleFareOption(
         id: 'ev_car',
-        name: 'EV Car',
-        subtitle: 'Green Electric Sedan',
-        etaMin: 4,
-        capacity: 4,
-        fare: max(95.0, (80.0 + (distKm * 18.0)).roundToDouble()),
+        name: (_vehicleCustomSettings['ev_car']?['name'] as String?) ?? 'EV Car',
+        subtitle: (_vehicleCustomSettings['ev_car']?['tagline'] as String?) ?? 'Green Electric Sedan',
+        etaMin: minEtaFor('car', 4),
+        capacity: (_vehicleCustomSettings['ev_car']?['capacity'] as num?)?.toInt() ?? 4,
+        fare: computeVehicleFare('ev_car', defaultBase: 70.0, defaultPerKm: 19.0, defaultPerMin: 2.4, defaultMinFare: 95.0),
         distanceKm: distKm,
         durationMin: durationMin,
         icon: 'cab_premium',
         imageUrl: 'assets/images/vehicles/ev_car.png',
         isElectric: true,
-        badge: '🌿 100% Green EV',
-        nearbyCount: 3,
+        badge: (_vehicleCustomSettings['ev_car']?['badge'] as String?) ?? '⚡ Clean EV',
+        nearbyCount: countFor('car'),
+        isAvailable: isVehicleAvailable('ev_car'),
       ),
     ];
+  }
+
+  Future<Uint8List> _createVehicleMapMarkerImage({
+    required String vehicleType,
+    required bool isSelected,
+    required int etaMin,
+  }) async {
+    const double width = 84;
+    const double height = 84;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, width, height));
+
+    final center = const Offset(42, 36);
+    final radius = isSelected ? 24.0 : 19.0;
+
+    // Drop shadow
+    final shadowPaint = Paint()
+      ..color = (isSelected ? const Color(0xFF7F00FD) : Colors.black).withValues(alpha: isSelected ? 0.35 : 0.2)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawCircle(Offset(center.dx, center.dy + 3), radius + 2, shadowPaint);
+
+    // Outer glow / border circle
+    final outerPaint = Paint()
+      ..isAntiAlias = true
+      ..style = PaintingStyle.fill
+      ..color = isSelected ? const Color(0xFF7F00FD) : const Color(0xFF180D2B);
+    canvas.drawCircle(center, radius, outerPaint);
+
+    // Inner white circle
+    final innerPaint = Paint()
+      ..isAntiAlias = true
+      ..style = PaintingStyle.fill
+      ..color = Colors.white;
+    canvas.drawCircle(center, radius - 2.5, innerPaint);
+
+    // Vehicle icon glyph
+    IconData iconData = Icons.electric_scooter_rounded;
+    if (vehicleType.contains('bike')) {
+      iconData = Icons.two_wheeler_rounded;
+    } else if (vehicleType.contains('auto')) {
+      iconData = Icons.electric_rickshaw_rounded;
+    } else if (vehicleType.contains('car') || vehicleType.contains('cab')) {
+      iconData = Icons.directions_car_rounded;
+    }
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(iconData.codePoint),
+        style: TextStyle(
+          fontFamily: iconData.fontFamily,
+          package: iconData.fontPackage,
+          fontSize: isSelected ? 20 : 16,
+          color: isSelected ? const Color(0xFF7F00FD) : const Color(0xFF180D2B),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(center.dx - (textPainter.width / 2), center.dy - (textPainter.height / 2)),
+    );
+
+    // Small ETA badge pill underneath
+    final pillRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: const Offset(42, 64), width: 38, height: 16),
+      const Radius.circular(8),
+    );
+    final pillPaint = Paint()
+      ..isAntiAlias = true
+      ..style = PaintingStyle.fill
+      ..color = isSelected ? const Color(0xFF7F00FD) : const Color(0xFF388E3C);
+    canvas.drawRRect(pillRect, pillPaint);
+
+    final etaTextPainter = TextPainter(
+      text: TextSpan(
+        text: '$etaMin m',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    etaTextPainter.layout();
+    etaTextPainter.paint(
+      canvas,
+      Offset(42 - (etaTextPainter.width / 2), 64 - (etaTextPainter.height / 2)),
+    );
+
+    final picture = recorder.endRecording();
+    final img = await picture.toImage(width.toInt(), height.toInt());
+    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
   }
 
   Future<Uint8List> _createMapPinImage({
@@ -420,7 +651,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
         
         final polylineOptions = mb.PolylineAnnotationOptions(
           geometry: mb.LineString(coordinates: _routeInfo!.routeCoordinates),
-          lineColor: const Color(0xFFE91E63).toARGB32(),
+          lineColor: const Color(0xFF7F00FD).toARGB32(),
           lineWidth: 5.5,
           lineJoin: mb.LineJoin.ROUND,
         );
@@ -430,7 +661,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
       debugPrint("Draw route on Mapbox notice: $e");
     }
 
-    // 2. Draw Start (Pickup Pin) & End (Destination Pin) with Teardrop needle stem pointers
+    // 2. Draw Start (Pickup Pin), End (Destination Pin) and Nearby Vehicles (Rapido style)
     try {
       if (_pointAnnotationManager != null) {
         await _pointAnnotationManager?.deleteAll();
@@ -441,7 +672,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
         );
 
         final dropPinBytes = await _createMapPinImage(
-          pinColor: const Color(0xFFE91E63), // Pink Accent
+          pinColor: const Color(0xFF7F00FD), // Pink Accent
           label: 'D',
         );
 
@@ -460,9 +691,32 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
           iconAnchor: mb.IconAnchor.BOTTOM,
           iconSize: 0.8,
         ));
+
+        // 3. Draw Nearby Live Vehicles on Map (Rapido / Uber style)
+        final selectedOption = _options.isNotEmpty && _selectedIndex < _options.length ? _options[_selectedIndex] : null;
+        for (final vehicle in _nearbyVehicles) {
+          final isMatchingCategory = selectedOption != null &&
+              ((selectedOption.id.contains('scoot') && vehicle.vehicleType.contains('scoot')) ||
+               (selectedOption.id.contains('bike') && vehicle.vehicleType.contains('bike')) ||
+               (selectedOption.id.contains('auto') && vehicle.vehicleType.contains('auto')) ||
+               (selectedOption.id.contains('car') && (vehicle.vehicleType.contains('car') || vehicle.vehicleType.contains('cab'))));
+
+          final vehicleMarkerBytes = await _createVehicleMapMarkerImage(
+            vehicleType: vehicle.vehicleType,
+            isSelected: isMatchingCategory,
+            etaMin: vehicle.etaMinutes,
+          );
+
+          await _pointAnnotationManager?.create(mb.PointAnnotationOptions(
+            geometry: mb.Point(coordinates: mb.Position(vehicle.lng, vehicle.lat)),
+            image: vehicleMarkerBytes,
+            iconAnchor: mb.IconAnchor.CENTER,
+            iconSize: isMatchingCategory ? 0.95 : 0.75,
+          ));
+        }
       }
     } catch (e) {
-      debugPrint("Draw start/end pin pointers on Mapbox notice: $e");
+      debugPrint("Draw pins & nearby vehicles on Mapbox notice: $e");
     }
   }
 
@@ -491,7 +745,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
             const SizedBox(height: 16),
             Text(
               'Select Promo Coupon',
-              style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
+              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
             ),
             const SizedBox(height: 12),
             FutureBuilder<List<OfferModel>>(
@@ -509,7 +763,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: isApplied ? const Color(0xFFE91E63) : Colors.grey.shade200,
+                          color: isApplied ? const Color(0xFF7F00FD) : Colors.grey.shade200,
                           width: isApplied ? 2 : 1,
                         ),
                       ),
@@ -518,18 +772,18 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFCE4EC),
+                              color: const Color(0xFFF0EEFD),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(Icons.percent_rounded, color: Color(0xFFE91E63), size: 20),
+                            child: const Icon(Icons.percent_rounded, color: Color(0xFF7F00FD), size: 20),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(offer.code, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 14)),
-                                Text(offer.description, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF757575))),
+                                Text(offer.code, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14)),
+                                Text(offer.description, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF757575))),
                               ],
                             ),
                           ),
@@ -542,12 +796,12 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Coupon ${offer.code} applied! Saved ₹${discount.toInt()}'),
-                                  backgroundColor: const Color(0xFFE91E63),
+                                  backgroundColor: const Color(0xFF7F00FD),
                                 ),
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE91E63),
+                              backgroundColor: const Color(0xFF7F00FD),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -589,7 +843,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
               ),
             ),
             const SizedBox(height: 16),
-            Text('Choose Payment Method', style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Choose Payment Method', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 14),
             _buildPaymentOption('Cash', 'Pay cash directly to Captain', Icons.money_rounded, ctx),
             _buildPaymentOption('UPI', 'Google Pay / PhonePe / Paytm', Icons.qr_code_2_rounded, ctx),
@@ -603,10 +857,10 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
   Widget _buildPaymentOption(String title, String subtitle, IconData icon, BuildContext ctx) {
     final isSelected = _selectedPaymentMethod == title;
     return ListTile(
-      leading: Icon(icon, color: const Color(0xFFE91E63)),
-      title: Text(title, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 14)),
-      subtitle: Text(subtitle, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF757575))),
-      trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFFE91E63)) : null,
+      leading: Icon(icon, color: const Color(0xFF7F00FD)),
+      title: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14)),
+      subtitle: Text(subtitle, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF757575))),
+      trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF7F00FD)) : null,
       onTap: () {
         setState(() => _selectedPaymentMethod = title);
         Navigator.pop(ctx);
@@ -615,7 +869,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
   }
 
   void _showFareAdjustmentModal(double defaultBoost) {
-    double currentSliderBoost = defaultBoost > 0 ? defaultBoost : (_fareBoost > 0 ? _fareBoost : 20.0);
+    double currentSliderBoost = defaultBoost >= 0 ? defaultBoost : (_fareBoost > 0 ? _fareBoost : 5.0);
     final selectedVehicle = _options[_selectedIndex];
     final originalFare = selectedVehicle.fare;
     final discount = _appliedOffer?.calculateDiscount(originalFare, vehicleType: selectedVehicle.id) ?? 0.0;
@@ -659,7 +913,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                   const SizedBox(height: 16),
                   Text(
                     'Boost Fare for Faster Pickup',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF1A1A1A),
@@ -668,7 +922,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                   const SizedBox(height: 4),
                   Text(
                     'Higher fare attracts female captains nearby much faster.',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 12,
                       color: const Color(0xFF757575),
                     ),
@@ -691,7 +945,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                           children: [
                             Text(
                               'Base Fare: ₹${baseFare.toInt()}',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFF757575),
@@ -700,7 +954,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                             const SizedBox(height: 2),
                             Text(
                               'Extra Boost: +₹${currentSliderBoost.toInt()}',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF2E7D32),
@@ -713,7 +967,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                           children: [
                             Text(
                               'Total New Fare',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFF757575),
@@ -721,10 +975,10 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                             ),
                             Text(
                               '₹${totalUpdatedFare.toInt()}',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 22,
                                 fontWeight: FontWeight.w900,
-                                color: const Color(0xFFE91E63),
+                                color: const Color(0xFF7F00FD),
                               ),
                             ),
                           ],
@@ -734,9 +988,9 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                   ),
                   const SizedBox(height: 16),
 
-                  // Preset Quick Boost chips
+                  // Preset Quick Lower Boost chips
                   Row(
-                    children: [10.0, 20.0, 30.0, 50.0].map((amount) {
+                    children: [0.0, 5.0, 10.0, 15.0].map((amount) {
                       final isSelected = currentSliderBoost == amount;
                       return Expanded(
                         child: GestureDetector(
@@ -749,17 +1003,17 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                             margin: const EdgeInsets.symmetric(horizontal: 3),
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFFE91E63) : Colors.white,
+                              color: isSelected ? const Color(0xFF7F00FD) : Colors.white,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: isSelected ? const Color(0xFFE91E63) : Colors.grey.shade300,
+                                color: isSelected ? const Color(0xFF7F00FD) : Colors.grey.shade300,
                               ),
                             ),
                             child: Center(
                               child: Text(
-                                '+₹${amount.toInt()}',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 13,
+                                amount == 0.0 ? 'Base ₹0' : '+₹${amount.toInt()}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                   color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
                                 ),
@@ -772,27 +1026,27 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                   ),
                   const SizedBox(height: 14),
 
-                  // Interactive Slider
+                  // Interactive Slider (Economic range: ₹0 to ₹30)
                   Row(
                     children: [
                       Text(
-                        '+₹10',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+                        '₹0',
+                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
                       ),
                       Expanded(
                         child: SliderTheme(
                           data: SliderTheme.of(context).copyWith(
-                            activeTrackColor: const Color(0xFFE91E63),
-                            inactiveTrackColor: const Color(0xFFF8BBD9),
-                            thumbColor: const Color(0xFFE91E63),
+                            activeTrackColor: const Color(0xFF7F00FD),
+                            inactiveTrackColor: const Color(0xFFEDDCFF),
+                            thumbColor: const Color(0xFF7F00FD),
                             overlayColor: const Color(0x29E91E63),
                             trackHeight: 4,
                           ),
                           child: Slider(
                             value: currentSliderBoost,
-                            min: 10.0,
-                            max: 100.0,
-                            divisions: 9,
+                            min: 0.0,
+                            max: 30.0,
+                            divisions: 6,
                             label: '+₹${currentSliderBoost.toInt()}',
                             onChanged: (val) {
                               setModalState(() {
@@ -803,8 +1057,8 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                         ),
                       ),
                       Text(
-                        '+₹100',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+                        '+₹30',
+                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
                       ),
                     ],
                   ),
@@ -820,7 +1074,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                         await _applyFareBoostAndRestart(currentSliderBoost);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE91E63),
+                        backgroundColor: const Color(0xFF7F00FD),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
@@ -832,7 +1086,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                           const SizedBox(width: 8),
                           Text(
                             'Confirm ₹${totalUpdatedFare.toInt()} & Find Partner',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                             ),
@@ -880,7 +1134,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Fare increased by ₹${boost.toInt()}! Restarting search for partners (45s) 🚀'),
-          backgroundColor: const Color(0xFFE91E63),
+          backgroundColor: const Color(0xFF7F00FD),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -904,6 +1158,8 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
     try {
       final ride = await _rideService.createRide(
         userId: userId,
+        userName: authService.currentUser?.displayName ?? 'Passenger',
+        userPhone: authService.currentUser?.phoneNumber ?? '',
         pickup: _pickupLocation,
         drop: _dropLocation,
         selectedVehicle: VehicleFareOption(
@@ -966,7 +1222,18 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
             _searchTimer?.cancel();
             context.push('/rider-assigned', extra: {'ride': updatedRide});
           } else if (updatedRide.status == 'cancelled') {
+            final reason = updatedRide.cancelReason;
+            final byAdmin = updatedRide.cancelledBy == 'admin';
             _cancelSearchingLocally();
+            if (byAdmin && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('⚠️ Ride cancelled by SheRide Support${reason != null && reason.isNotEmpty ? ": $reason" : ""}'),
+                  backgroundColor: AppColors.error,
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }
           }
         }
       },
@@ -1040,7 +1307,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                           children: [
                             Text(
                               'Why are you cancelling?',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 16.5,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF1A1A1A),
@@ -1049,7 +1316,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                             const SizedBox(height: 2),
                             Text(
                               'Please let us know so we can improve your experience',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 color: const Color(0xFF757575),
                               ),
@@ -1071,10 +1338,10 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                         decoration: BoxDecoration(
-                          color: isChosen ? const Color(0xFFFFF0F5) : const Color(0xFFF9F9F9),
+                          color: isChosen ? const Color(0xFFF0EEFD) : const Color(0xFFF9F9F9),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isChosen ? const Color(0xFFE91E63) : const Color(0xFFEEEEEE),
+                            color: isChosen ? const Color(0xFF7F00FD) : const Color(0xFFEEEEEE),
                             width: isChosen ? 1.5 : 1,
                           ),
                         ),
@@ -1083,13 +1350,13 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                             Icon(
                               isChosen ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
                               size: 19,
-                              color: isChosen ? const Color(0xFFE91E63) : Colors.grey.shade400,
+                              color: isChosen ? const Color(0xFF7F00FD) : Colors.grey.shade400,
                             ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 r,
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 12.5,
                                   fontWeight: isChosen ? FontWeight.w700 : FontWeight.w500,
                                   color: isChosen ? const Color(0xFF1A1A1A) : const Color(0xFF424242),
@@ -1112,13 +1379,13 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(ctx),
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFE91E63), width: 1.5),
+                              side: const BorderSide(color: Color(0xFF7F00FD), width: 1.5),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              foregroundColor: const Color(0xFFE91E63),
+                              foregroundColor: const Color(0xFF7F00FD),
                             ),
                             child: Text(
                               'Keep Searching',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -1143,7 +1410,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                             ),
                             child: Text(
                               'Confirm Cancel',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -1207,26 +1474,84 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
     final mapHeight = screenHeight * 0.38;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: Stack(
         children: [
-          // Mapbox Native Driving Route Map View (Extends to top status bar)
+          // Interactive Driving Route Map View (Web: Gesture-friendly OpenStreetMap/Carto, Mobile: Mapbox)
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             height: mapHeight + 24,
-            child: mb.MapWidget(
-              cameraOptions: mb.CameraOptions(
-                center: mb.Point(coordinates: mb.Position(
-                  (_pickupLocation.lng + _dropLocation.lng) / 2,
-                  (_pickupLocation.lat + _dropLocation.lat) / 2,
-                )),
-                zoom: 12.0,
-              ),
-              styleUri: ApiConstants.mapboxStyleUrl,
-              onMapCreated: _onMapCreated,
-            ),
+            child: kIsWeb
+                ? SheRideInteractiveMap(
+                    initialLat: (_pickupLocation.lat + _dropLocation.lat) / 2,
+                    initialLng: (_pickupLocation.lng + _dropLocation.lng) / 2,
+                    initialZoom: 12.8,
+                    routePoints: (_routeInfo != null && _routeInfo!.routeCoordinates.isNotEmpty)
+                        ? _routeInfo!.routeCoordinates.map((p) => ll.LatLng(p.lat.toDouble(), p.lng.toDouble())).toList()
+                        : [
+                            ll.LatLng(_pickupLocation.lat, _pickupLocation.lng),
+                            ll.LatLng(_dropLocation.lat, _dropLocation.lng),
+                          ],
+                    markers: [
+                      // Pickup Pin
+                      SheRideMarker(
+                        point: ll.LatLng(_pickupLocation.lat, _pickupLocation.lng),
+                        width: 72,
+                        height: 56,
+                        alignment: Alignment.topCenter,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00C853),
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                              ),
+                              child: const Text('PICKUP', style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
+                            ),
+                            const Icon(Icons.location_on_rounded, color: Color(0xFF00C853), size: 30),
+                          ],
+                        ),
+                      ),
+                      // Drop Pin
+                      SheRideMarker(
+                        point: ll.LatLng(_dropLocation.lat, _dropLocation.lng),
+                        width: 72,
+                        height: 56,
+                        alignment: Alignment.topCenter,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                              ),
+                              child: const Text('DROP', style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
+                            ),
+                            const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 30),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : mb.MapWidget(
+                    cameraOptions: mb.CameraOptions(
+                      center: mb.Point(coordinates: mb.Position(
+                        (_pickupLocation.lng + _dropLocation.lng) / 2,
+                        (_pickupLocation.lat + _dropLocation.lat) / 2,
+                      )),
+                      zoom: 12.0,
+                    ),
+                    styleUri: ApiConstants.mapboxStyleUrl,
+                    onMapCreated: _onMapCreated,
+                  ),
           ),
 
           // Top White Fade Gradient Background (Exact match with Home Page)
@@ -1270,7 +1595,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                       offset: const Offset(0, 4),
                     ),
                   ],
-                  border: Border.all(color: const Color(0xFFFCE4EC)),
+                  border: Border.all(color: const Color(0xFFF0EEFD)),
                 ),
                 child: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Color(0xFF1A1A1A)),
               ),
@@ -1293,17 +1618,17 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                     offset: const Offset(0, 4),
                   ),
                 ],
-                border: Border.all(color: const Color(0xFFFCE4EC)),
+                border: Border.all(color: const Color(0xFFF0EEFD)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.directions_car_rounded, size: 16, color: Color(0xFFE91E63)),
+                  const Icon(Icons.directions_car_rounded, size: 16, color: Color(0xFF7F00FD)),
                   const SizedBox(width: 6),
                   Text(
                     _isLoadingRoute
                         ? 'Calculating route...'
                         : '${selected.distanceKm} km • ${selected.durationMin} mins',
-                    style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
                   ),
                 ],
               ),
@@ -1353,9 +1678,9 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF0F5),
+                              color: const Color(0xFFF0EEFD),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFF8BBD9).withValues(alpha: 0.5)),
+                              border: Border.all(color: const Color(0xFFEDDCFF).withValues(alpha: 0.5)),
                             ),
                             child: Row(
                               children: [
@@ -1364,19 +1689,19 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                                 Expanded(
                                   child: Text(
                                     _pickupLocation.name?.isNotEmpty == true ? _pickupLocation.name! : _pickupLocation.address,
-                                    style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w700),
+                                    style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 const Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFF757575)),
                                 const SizedBox(width: 6),
-                                const Icon(Icons.location_on, size: 14, color: Color(0xFFE91E63)),
+                                const Icon(Icons.location_on, size: 14, color: Color(0xFF7F00FD)),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     _dropLocation.name?.isNotEmpty == true ? _dropLocation.name! : _dropLocation.address,
-                                    style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w700),
+                                    style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -1424,7 +1749,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                                       const SizedBox(width: 6),
                                       Text(
                                         '$_selectedPaymentMethod >',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: GoogleFonts.inter(
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w700,
                                           color: const Color(0xFF1A1A1A),
@@ -1447,14 +1772,14 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.percent_rounded, size: 15, color: Color(0xFFE91E63)),
+                                      const Icon(Icons.percent_rounded, size: 15, color: Color(0xFF7F00FD)),
                                       const SizedBox(width: 4),
                                       Text(
                                         _appliedOffer != null ? _appliedOffer!.code : 'Offers >',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: GoogleFonts.inter(
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w700,
-                                          color: _appliedOffer != null ? const Color(0xFFE91E63) : const Color(0xFF1A1A1A),
+                                          color: _appliedOffer != null ? const Color(0xFF7F00FD) : const Color(0xFF1A1A1A),
                                         ),
                                       ),
                                     ],
@@ -1470,24 +1795,27 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                             width: double.infinity,
                             height: 52,
                             child: ElevatedButton(
-                              onPressed: _isBooking ? null : _handleBookRide,
+                              onPressed: (_isBooking || !selected.isAvailable) ? null : _handleBookRide,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFE91E63),
-                                foregroundColor: Colors.white,
-                                elevation: 3,
+                                backgroundColor: selected.isAvailable ? const Color(0xFFFFB001) : Colors.grey.shade300,
+                                foregroundColor: const Color(0xFF180D2B),
+                                elevation: selected.isAvailable ? 3 : 0,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                               ),
                               child: _isBooking
                                   ? const SizedBox(
                                       width: 22,
                                       height: 22,
-                                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF180D2B)),
                                     )
                                   : Text(
-                                      'Book ${selected.name} • ₹${finalFare.toInt()}',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 16,
+                                      selected.isAvailable
+                                          ? 'Book ${selected.name} • ₹${finalFare.toInt()}'
+                                          : '${selected.name} is Currently Unavailable',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 15,
                                         fontWeight: FontWeight.w800,
+                                        color: selected.isAvailable ? const Color(0xFF180D2B) : Colors.grey.shade700,
                                       ),
                                     ),
                             ),
@@ -1510,16 +1838,16 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFE91E63) : Colors.white,
+            color: isSelected ? const Color(0xFF7F00FD) : Colors.white,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isSelected ? const Color(0xFFE91E63) : const Color(0xFFE0E0E0),
+              color: isSelected ? const Color(0xFF7F00FD) : const Color(0xFFE0E0E0),
               width: isSelected ? 1.5 : 1,
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: const Color(0xFFE91E63).withValues(alpha: 0.2),
+                      color: const Color(0xFF7F00FD).withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -1529,7 +1857,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
           child: Center(
             child: Text(
               '+₹${amount.toInt()}',
-              style: GoogleFonts.plusJakartaSans(
+              style: GoogleFonts.inter(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w800,
                 color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
@@ -1585,7 +1913,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: const Color(0xFFE91E63).withValues(alpha: (1.0 - progress) * 0.4),
+                                color: const Color(0xFF7F00FD).withValues(alpha: (1.0 - progress) * 0.4),
                                 width: 1.5,
                               ),
                             ),
@@ -1602,9 +1930,9 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                             height: 66 + (progress * 26),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFFE91E63).withValues(alpha: (1.0 - progress) * 0.1),
+                              color: const Color(0xFF7F00FD).withValues(alpha: (1.0 - progress) * 0.1),
                               border: Border.all(
-                                color: const Color(0xFFE91E63).withValues(alpha: (1.0 - progress) * 0.6),
+                                color: const Color(0xFF7F00FD).withValues(alpha: (1.0 - progress) * 0.6),
                                 width: 1.5,
                               ),
                             ),
@@ -1616,12 +1944,12 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                         width: 66,
                         height: 66,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFF0F5),
+                          color: const Color(0xFFF0EEFD),
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFE91E63), width: 2),
+                          border: Border.all(color: const Color(0xFF7F00FD), width: 2),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFE91E63).withValues(alpha: 0.2),
+                              color: const Color(0xFF7F00FD).withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -1631,7 +1959,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                         child: Image.asset(
                           selected.imageUrl.isNotEmpty ? selected.imageUrl : 'assets/images/vehicles/scooty.png',
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.electric_scooter_rounded, color: Color(0xFFE91E63), size: 30),
+                          errorBuilder: (_, __, ___) => const Icon(Icons.electric_scooter_rounded, color: Color(0xFF7F00FD), size: 30),
                         ),
                       ),
                     ],
@@ -1642,7 +1970,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                 // Status Title
                 Text(
                   'Finding Your ${selected.name} Captain...',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.inter(
                     fontSize: 16.5,
                     fontWeight: FontWeight.w900,
                     color: const Color(0xFF1A1A1A),
@@ -1654,7 +1982,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                   _searchCountdownSeconds > 0
                       ? 'Contacting verified female captains nearby (${_searchCountdownSeconds}s)...'
                       : 'Finding partner took longer. Boost fare below to get matched fast!',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.inter(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                     color: _searchCountdownSeconds > 0 ? const Color(0xFF757575) : const Color(0xFFE53935),
@@ -1680,7 +2008,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                             children: [
                               Text(
                                 selected.name,
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w800,
                                   color: const Color(0xFF1A1A1A),
@@ -1695,7 +2023,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                                 ),
                                 child: Text(
                                   _selectedPaymentMethod,
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF2E7D32),
@@ -1711,23 +2039,23 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                                   margin: const EdgeInsets.only(right: 6),
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFFFF0F5),
+                                    color: const Color(0xFFF0EEFD),
                                     borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: const Color(0xFFF8BBD9)),
+                                    border: Border.all(color: const Color(0xFFEDDCFF)),
                                   ),
                                   child: Text(
                                     '+₹${_fareBoost.toInt()}',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w800,
-                                      color: const Color(0xFFE91E63),
+                                      color: const Color(0xFF7F00FD),
                                     ),
                                   ),
                                 ),
                               ],
                               Text(
                                 '₹${finalFare.toInt()}',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w900,
                                   color: const Color(0xFF1A1A1A),
@@ -1745,7 +2073,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                           Expanded(
                             child: Text(
                               widget.pickup.name?.isNotEmpty == true ? widget.pickup.name! : widget.pickup.address,
-                              style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF424242)),
+                              style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF424242)),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1755,12 +2083,12 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.location_on, size: 13, color: Color(0xFFE91E63)),
+                          const Icon(Icons.location_on, size: 13, color: Color(0xFF7F00FD)),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               widget.drop.name?.isNotEmpty == true ? widget.drop.name! : widget.drop.address,
-                              style: GoogleFonts.plusJakartaSans(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF424242)),
+                              style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF424242)),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1778,7 +2106,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF8F9),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFF8BBD9)),
+                    border: Border.all(color: const Color(0xFFEDDCFF)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1788,11 +2116,11 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFFE91E63)),
+                              const Icon(Icons.bolt_rounded, size: 16, color: Color(0xFF7F00FD)),
                               const SizedBox(width: 4),
                               Text(
                                 'Finding Partner Faster',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w800,
                                   color: const Color(0xFF1A1A1A),
@@ -1802,10 +2130,10 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                           ),
                           Text(
                             'Increase Fare',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFFE91E63),
+                              color: const Color(0xFF7F00FD),
                             ),
                           ),
                         ],
@@ -1813,39 +2141,39 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                       const SizedBox(height: 4),
                       Text(
                         'Boost fare to increase priority for female captains:',
-                        style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF757575)),
+                        style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF757575)),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
+                          _buildBoostChip(5.0),
+                          const SizedBox(width: 6),
                           _buildBoostChip(10.0),
                           const SizedBox(width: 6),
-                          _buildBoostChip(20.0),
-                          const SizedBox(width: 6),
-                          _buildBoostChip(50.0),
+                          _buildBoostChip(15.0),
                           const SizedBox(width: 6),
                           Expanded(
                             child: InkWell(
-                              onTap: () => _showFareAdjustmentModal(_fareBoost > 0 ? _fareBoost : 20.0),
+                              onTap: () => _showFareAdjustmentModal(_fareBoost > 0 ? _fareBoost : 5.0),
                               borderRadius: BorderRadius.circular(10),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 8),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFFE91E63), width: 1.2),
+                                  border: Border.all(color: const Color(0xFF7F00FD), width: 1.2),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(Icons.tune_rounded, size: 13, color: Color(0xFFE91E63)),
+                                    const Icon(Icons.tune_rounded, size: 13, color: Color(0xFF7F00FD)),
                                     const SizedBox(width: 3),
                                     Text(
                                       'Slider',
-                                      style: GoogleFonts.plusJakartaSans(
+                                      style: GoogleFonts.inter(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w800,
-                                        color: const Color(0xFFE91E63),
+                                        color: const Color(0xFF7F00FD),
                                       ),
                                     ),
                                   ],
@@ -1892,7 +2220,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                         const SizedBox(width: 8),
                         Text(
                           'Cancel Ride Search',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFFE53935),
@@ -1912,146 +2240,176 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
     required VehicleFareOption option,
     required bool isSelected,
   }) {
+    final bool isAvail = option.isAvailable;
     return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFFF0F5) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? const Color(0xFFE91E63) : const Color(0xFFEEEEEE),
-            width: isSelected ? 1.5 : 1,
+      onTap: () {
+        setState(() => _selectedIndex = index);
+        _drawRouteAndFitCamera();
+      },
+      child: Opacity(
+        opacity: isAvail ? 1.0 : 0.60,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? (isAvail ? const Color(0xFFF0EEFD) : Colors.grey.shade100) 
+                : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected 
+                  ? (isAvail ? const Color(0xFF7F00FD) : Colors.grey.shade400) 
+                  : const Color(0xFFEEEEEE),
+              width: isSelected ? 1.5 : 1,
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            // Vehicle Image Artwork
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.white : const Color(0xFFF9F9F9),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected ? const Color(0xFFFCE4EC) : Colors.transparent,
+          child: Row(
+            children: [
+              // Vehicle Image Artwork
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : const Color(0xFFF9F9F9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFFF0EEFD) : Colors.transparent,
+                  ),
+                ),
+                padding: const EdgeInsets.all(3),
+                child: Image.asset(
+                  option.imageUrl.isNotEmpty ? option.imageUrl : 'assets/images/vehicles/scooty.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.electric_scooter_rounded, color: Color(0xFF7F00FD)),
                 ),
               ),
-              padding: const EdgeInsets.all(3),
-              child: Image.asset(
-                option.imageUrl.isNotEmpty ? option.imageUrl : 'assets/images/vehicles/scooty.png',
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.electric_scooter_rounded, color: Color(0xFFE91E63)),
-              ),
-            ),
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-            // Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          option.name,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF1A1A1A),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (option.isElectric) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+              // Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
                           child: Text(
-                            '⚡ EV',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 9.5,
+                            option.name,
+                            style: GoogleFonts.inter(
+                              fontSize: 13.5,
                               fontWeight: FontWeight.w800,
-                              color: const Color(0xFF2E7D32),
+                              color: isAvail ? const Color(0xFF1A1A1A) : Colors.grey.shade700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (!isAvail) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.red.shade200, width: 0.8),
+                            ),
+                            child: Text(
+                              '🚫 Unavailable',
+                              style: GoogleFonts.inter(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.red.shade700,
+                              ),
                             ),
                           ),
-                        ),
+                        ] else if (option.isElectric) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '⚡ EV',
+                              style: GoogleFonts.inter(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF2E7D32),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isAvail ? option.subtitle : 'Disabled by Admin in Fleet Settings',
+                      style: GoogleFonts.inter(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: isAvail ? const Color(0xFF7F00FD) : Colors.red.shade400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
+                    Row(
+                      children: [
+                        Text(
+                          isAvail ? '${option.etaMin} mins away' : 'Not in service',
+                          style: GoogleFonts.inter(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF757575),
+                          ),
+                        ),
+                        if (isAvail)
+                          Text(
+                            ' • ${option.nearbyCount} captains near',
+                            style: GoogleFonts.inter(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF388E3C),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Normal Price Display
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    isAvail ? '₹${option.fare.toInt()}' : 'Off',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: isAvail ? const Color(0xFF1A1A1A) : Colors.grey.shade500,
+                    ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    option.subtitle,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFFE91E63),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 1),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      const Icon(Icons.person, size: 12, color: Color(0xFF757575)),
+                      const SizedBox(width: 2),
                       Text(
-                        '${option.etaMin} mins away',
-                        style: GoogleFonts.plusJakartaSans(
+                        '${option.capacity}',
+                        style: GoogleFonts.inter(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF757575),
-                        ),
-                      ),
-                      Text(
-                        ' • ${option.nearbyCount} captains near',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF388E3C),
                         ),
                       ),
                     ],
                   ),
                 ],
               ),
-            ),
-
-            // Normal Price Display
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '₹${option.fare.toInt()}',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: const Color(0xFF1A1A1A),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.person, size: 12, color: Color(0xFF757575)),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${option.capacity}',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF757575),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

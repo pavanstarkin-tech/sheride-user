@@ -57,8 +57,12 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
         if (updated.status == 'completed') {
           context.go('/ride-completed', extra: {'ride': updated});
         } else if (updated.status == 'cancelled') {
+          final isByAdmin = updated.cancelledBy == 'admin';
+          final msg = isByAdmin
+              ? '⚠️ Ride cancelled by SheRide Support${updated.cancelReason != null ? ": ${updated.cancelReason}" : ""}'
+              : 'Ride was cancelled';
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ride was cancelled'), backgroundColor: AppColors.error),
+            SnackBar(content: Text(msg), backgroundColor: AppColors.error),
           );
           context.go('/home');
         }
@@ -120,7 +124,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Live trip safety link shared with emergency contacts! 🌸'),
-        backgroundColor: Color(0xFFE91E63),
+        backgroundColor: Color(0xFF7F00FD),
       ),
     );
   }
@@ -171,7 +175,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                         ),
                         child: Text(
                           _currentRide.pickup.name ?? 'Pickup',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 9.5,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF1A1A1A),
@@ -191,7 +195,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                             width: 8,
                             height: 8,
                             decoration: const BoxDecoration(
-                              color: Color(0xFFE91E63),
+                              color: Color(0xFF7F00FD),
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -205,7 +209,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                             ),
                             child: Text(
                               _currentRide.drop.name ?? 'Drop Location',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF1A1A1A),
@@ -223,11 +227,11 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE91E63),
+                          color: const Color(0xFF7F00FD),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFE91E63).withValues(alpha: 0.4),
+                              color: const Color(0xFF7F00FD).withValues(alpha: 0.4),
                               blurRadius: 10,
                               offset: const Offset(0, 3),
                             ),
@@ -281,14 +285,14 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.share_outlined, size: 15, color: Color(0xFFE91E63)),
+                                  const Icon(Icons.share_outlined, size: 15, color: Color(0xFF7F00FD)),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Share Trip',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w700,
-                                      color: const Color(0xFFE91E63),
+                                      color: const Color(0xFF7F00FD),
                                     ),
                                   ),
                                 ],
@@ -345,7 +349,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                               children: [
                                 Text(
                                   'On Trip',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 14.5,
                                     fontWeight: FontWeight.w800,
                                     color: const Color(0xFF1A1A1A),
@@ -353,7 +357,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                 ),
                                 Text(
                                   _liveRiderLocation != null ? 'Live tracking active' : 'Waiting for rider location...',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
                                     color: const Color(0xFF757575),
@@ -368,7 +372,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                           children: [
                             Text(
                               _currentEtaText,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF1A1A1A),
@@ -376,7 +380,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                             ),
                             Text(
                               _currentDistanceText,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
                                 color: const Color(0xFF757575),
@@ -399,9 +403,9 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                         children: [
                           CircleAvatar(
                             radius: 18,
-                            backgroundColor: const Color(0xFFFCE4EC),
+                            backgroundColor: const Color(0xFFF0EEFD),
                             backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                            child: photo.isEmpty ? const Icon(Icons.person, color: Color(0xFFE91E63), size: 18) : null,
+                            child: photo.isEmpty ? const Icon(Icons.person, color: Color(0xFF7F00FD), size: 18) : null,
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -410,7 +414,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                               children: [
                                 Text(
                                   riderName,
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w800,
                                     color: const Color(0xFF1A1A1A),
@@ -418,7 +422,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                 ),
                                 Text(
                                   '${rating.toStringAsFixed(1)} • $vehicleModel • $vehicle',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
                                     color: const Color(0xFF757575),
@@ -438,10 +442,10 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                               width: 34,
                               height: 34,
                               decoration: const BoxDecoration(
-                                color: Color(0xFFFCE4EC),
+                                color: Color(0xFFF0EEFD),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.phone_outlined, color: Color(0xFFE91E63), size: 18),
+                              child: const Icon(Icons.phone_outlined, color: Color(0xFF7F00FD), size: 18),
                             ),
                           ),
                         ],
@@ -486,15 +490,15 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF0F5),
+                        color: const Color(0xFFF0EEFD),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
                           const CircleAvatar(
                             radius: 16,
-                            backgroundColor: Color(0xFFF8BBD0),
-                            child: Icon(Icons.shield_rounded, color: Color(0xFFE91E63), size: 20),
+                            backgroundColor: Color(0xFFEDDCFF),
+                            child: Icon(Icons.shield_rounded, color: Color(0xFF7F00FD), size: 20),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -503,7 +507,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                               children: [
                                 Text(
                                   'Traveling Together',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w800,
                                     color: const Color(0xFF1A1A1A),
@@ -511,10 +515,10 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                 ),
                                 Text(
                                   'For Safer, Happier Cities',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w500,
-                                    color: const Color(0xFFE91E63),
+                                    color: const Color(0xFF7F00FD),
                                   ),
                                 ),
                               ],
@@ -555,7 +559,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
             const SizedBox(width: 5),
             Text(
               label,
-              style: GoogleFonts.plusJakartaSans(
+              style: GoogleFonts.inter(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
                 color: color,
@@ -584,7 +588,7 @@ class _LiveTrackingRoutePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final routePaint = Paint()
-      ..color = const Color(0xFFE91E63)
+      ..color = const Color(0xFF7F00FD)
       ..strokeWidth = 4
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;

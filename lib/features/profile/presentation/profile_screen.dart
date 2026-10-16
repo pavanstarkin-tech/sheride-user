@@ -37,7 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Logout from SheRide?', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+        title: Text('Logout from SheRide?', style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
         content: const Text('You will need to sign in again to book rides.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
@@ -73,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : ((currentUser?.photoURL?.isNotEmpty == true) ? currentUser!.photoURL! : _fallbackAvatar);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -86,7 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(
                     'Profile',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
                       color: const Color(0xFF1A1A1A),
@@ -97,20 +97,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF0F5),
+                        color: const Color(0xFFF0EEFD),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFF8BBD9)),
+                        border: Border.all(color: const Color(0xFFEDDCFF)),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.support_agent_rounded, size: 16, color: Color(0xFFE91E63)),
+                          const Icon(Icons.support_agent_rounded, size: 16, color: Color(0xFF7F00FD)),
                           const SizedBox(width: 4),
                           Text(
                             '24/7 Help',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFFE91E63),
+                              color: const Color(0xFF7F00FD),
                             ),
                           ),
                         ],
@@ -139,7 +139,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         offset: const Offset(0, 2),
                       ),
                     ],
-                    border: Border.all(color: const Color(0xFFFCE4EC)),
+                    border: Border.all(color: const Color(0xFFF0EEFD)),
                   ),
                   child: Row(
                     children: [
@@ -149,11 +149,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFE91E63), width: 2),
+                              border: Border.all(color: const Color(0xFF7F00FD), width: 2),
                             ),
                             child: CircleAvatar(
                               radius: 30,
-                              backgroundColor: const Color(0xFFF8BBD0),
+                              backgroundColor: const Color(0xFFEDDCFF),
                               backgroundImage: NetworkImage(photo),
                             ),
                           ),
@@ -178,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Text(
                               name,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF1A1A1A),
@@ -186,7 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             Text(
                               email,
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 color: const Color(0xFF757575),
@@ -200,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Flexible(
                                   child: Text(
                                     '4.92 • Verified Rider',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w700,
                                       color: const Color(0xFF2E7D32),
@@ -361,7 +361,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.inter(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w600,
                   color: isLogout ? const Color(0xFFE53935) : const Color(0xFF1A1A1A),
@@ -373,15 +373,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 margin: const EdgeInsets.only(right: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0F5),
+                  color: const Color(0xFFF0EEFD),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   badgeText,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFFE91E63),
+                    color: const Color(0xFF7F00FD),
                   ),
                 ),
               ),

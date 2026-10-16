@@ -229,9 +229,9 @@ class _MapboxPoiImageState extends State<MapboxPoiImage> {
       fallbackUrl,
       fit: widget.fit,
       errorBuilder: (_, __, ___) => Container(
-        color: const Color(0xFFFCE4EC),
+        color: const Color(0xFFF0EEFD),
         child: const Center(
-          child: Icon(Icons.location_city_rounded, color: Color(0xFFE91E63), size: 26),
+          child: Icon(Icons.location_city_rounded, color: Color(0xFF7F00FD), size: 26),
         ),
       ),
       loadingBuilder: (context, child, progress) {
@@ -250,7 +250,7 @@ class _MapboxPoiImageState extends State<MapboxPoiImage> {
           height: 16,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: Color(0xFFE91E63),
+            color: Color(0xFF7F00FD),
           ),
         ),
       ),
@@ -758,7 +758,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                               autofocus: widget.initialQuery == null,
                               onChanged: _onSearchChanged,
                               cursorColor: const Color(0xFF1A1A1A),
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFF1A1A1A),
@@ -798,7 +798,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
             // Content
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFE91E63)))
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF7F00FD)))
                   : hasSearchQuery
                       ? _buildSearchResultsList()
                       : _buildNearbySuggestions(),
@@ -821,12 +821,12 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
               const SizedBox(height: 12),
               Text(
                 'No exact places found',
-                style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w800),
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 4),
               Text(
                 'Try searching with nearby landmark or area name.',
-                style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF757575)),
+                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF757575)),
               ),
             ],
           ),
@@ -868,7 +868,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
               Expanded(
                 child: Text(
                   res.locality,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: const Color(0xFF1A1A1A),
@@ -877,7 +877,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
               ),
               Text(
                 '${dist.toStringAsFixed(1)} km',
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.inter(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF2E7D32),
@@ -887,7 +887,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
           ),
           subtitle: Text(
             res.fullAddress,
-            style: GoogleFonts.plusJakartaSans(fontSize: 11.5, color: const Color(0xFF757575)),
+            style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF757575)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -905,7 +905,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: Color(0xFFE91E63), strokeWidth: 2.5),
+              CircularProgressIndicator(color: Color(0xFF7F00FD), strokeWidth: 2.5),
               SizedBox(height: 12),
               Text(
                 'Fetching nearby places from Mapbox...',
@@ -928,7 +928,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
           children: [
             Text(
               'Nearby Places',
-              style: GoogleFonts.plusJakartaSans(
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: const Color(0xFF1A1A1A),
@@ -943,10 +943,10 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
                   child: Text(
                     _showAllNearby ? 'Show Less' : 'See All',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFFE91E63),
+                      color: const Color(0xFF7F00FD),
                     ),
                   ),
                 ),
@@ -1008,7 +1008,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                     height: 30,
                     child: Text(
                       place.title,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF1A1A1A),
@@ -1034,7 +1034,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
             children: [
               Text(
                 'Recently Visited',
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF1A1A1A),
@@ -1048,7 +1048,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                 },
                 child: Text(
                   'Clear',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.inter(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF757575),
@@ -1098,8 +1098,8 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                               rImage,
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
-                                color: const Color(0xFFFCE4EC),
-                                child: const Icon(Icons.history_rounded, color: Color(0xFFE91E63), size: 20),
+                                color: const Color(0xFFF0EEFD),
+                                child: const Icon(Icons.history_rounded, color: Color(0xFF7F00FD), size: 20),
                               ),
                             ),
                           ),
@@ -1112,7 +1112,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                             children: [
                               Text(
                                 r.title,
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
                                   color: const Color(0xFF1A1A1A),
@@ -1123,7 +1123,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 '${r.distanceKm.toStringAsFixed(1)} km away',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 10,
                                   color: const Color(0xFF2E7D32),
                                   fontWeight: FontWeight.w600,
@@ -1147,7 +1147,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
         // 4. Quick Transit Hub Categories
         Text(
           'Explore Transit & Hubs',
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.inter(
             fontSize: 15,
             fontWeight: FontWeight.w800,
             color: const Color(0xFF1A1A1A),
@@ -1180,11 +1180,11 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
               ),
               title: Text(
                 p['title'] as String,
-                style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
                 p['desc'] as String,
-                style: GoogleFonts.plusJakartaSans(fontSize: 10.5, color: const Color(0xFF757575)),
+                style: GoogleFonts.inter(fontSize: 10.5, color: const Color(0xFF757575)),
               ),
               trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFFBDBDBD)),
               onTap: () {

@@ -44,7 +44,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Thank you for rating your SheRide captain! 🌸'),
-          backgroundColor: Color(0xFFE91E63),
+          backgroundColor: Color(0xFF7F00FD),
         ),
       );
       context.go('/home');
@@ -75,7 +75,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
             const SizedBox(height: 16),
             Text(
               'Fare Breakdown',
-              style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
+              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
             ),
             const SizedBox(height: 14),
             _buildFareDetailRow('Base Fare', '₹${(widget.ride.fare * 0.7).toStringAsFixed(0)}'),
@@ -97,7 +97,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
         children: [
           Text(
             title,
-            style: GoogleFonts.plusJakartaSans(
+            style: GoogleFonts.inter(
               fontSize: 13.5,
               fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
               color: isBold ? const Color(0xFF1A1A1A) : const Color(0xFF757575),
@@ -105,10 +105,10 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
           ),
           Text(
             val,
-            style: GoogleFonts.plusJakartaSans(
+            style: GoogleFonts.inter(
               fontSize: 14,
               fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
-              color: isBold ? const Color(0xFFE91E63) : const Color(0xFF1A1A1A),
+              color: isBold ? const Color(0xFF7F00FD) : const Color(0xFF1A1A1A),
             ),
           ),
         ],
@@ -138,8 +138,8 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFFCE4EC),
-                  border: Border.all(color: const Color(0xFFF8BBD9), width: 3),
+                  color: const Color(0xFFF0EEFD),
+                  border: Border.all(color: const Color(0xFFEDDCFF), width: 3),
                 ),
                 child: Center(
                   child: Stack(
@@ -155,7 +155,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: const BoxDecoration(
-                            color: Color(0xFFE91E63),
+                            color: Color(0xFF7F00FD),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
@@ -170,7 +170,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
               // Title: Ride Completed!
               Text(
                 'Ride Completed!',
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: const Color(0xFF1A1A1A),
@@ -180,7 +180,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
               Text(
                 'Thank you for riding with SheRide\nSee you again soon!',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.inter(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF757575),
@@ -212,7 +212,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
                       children: [
                         Text(
                           '₹$fare',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                             color: const Color(0xFF1A1A1A),
@@ -220,7 +220,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
                         ),
                         Text(
                           'Paid via ${widget.ride.paymentMethod.toUpperCase()}',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFF757575),
@@ -232,10 +232,10 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
                       onTap: _showFareDetails,
                       child: Text(
                         'View Details >',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFFE91E63),
+                          color: const Color(0xFF7F00FD),
                         ),
                       ),
                     ),
@@ -256,7 +256,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
                   Text(
                     'How was your ride with\n$riderName?',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
                       color: const Color(0xFF1A1A1A),
@@ -296,10 +296,10 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
                 child: TextField(
                   controller: _feedbackController,
                   maxLines: 3,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF1A1A1A)),
+                  style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF1A1A1A)),
                   decoration: InputDecoration(
                     hintText: 'Share your experience (optional)',
-                    hintStyle: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF9E9E9E)),
+                    hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9E9E9E)),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.all(14),
                   ),
@@ -314,7 +314,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _submitRating,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE91E63),
+                    backgroundColor: const Color(0xFF7F00FD),
                     foregroundColor: Colors.white,
                     elevation: 3,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -327,7 +327,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
                         )
                       : Text(
                           'Submit Rating',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),

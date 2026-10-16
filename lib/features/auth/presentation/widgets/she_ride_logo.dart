@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class SheRideLogo extends StatelessWidget {
@@ -20,7 +21,7 @@ class SheRideLogo extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Real SheRide Logo Asset
+        // Lady Pilot Logo Asset
         useCircle
             ? Container(
                 width: size,
@@ -37,29 +38,44 @@ class SheRideLogo extends StatelessWidget {
                 ),
                 child: ClipOval(
                   child: Image.asset(
+                    'assets/images/final-logo1-1.jpeg',
+                    width: size,
+                    height: size,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      'assets/images/logo.png',
+                      width: size,
+                      height: size,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/images/bannerlog.png',
+                        width: size,
+                        height: size,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : ClipRRect(
+                borderRadius: BorderRadius.circular(size * 0.22),
+                child: Image.asset(
+                  'assets/images/final-logo1-1.jpeg',
+                  width: size,
+                  height: size,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Image.asset(
                     'assets/images/logo.png',
                     width: size,
                     height: size,
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => Image.asset(
-                      'assets/images/ogo.png',
+                      'assets/images/bannerlog.png',
                       width: size,
                       height: size,
                       fit: BoxFit.contain,
                     ),
                   ),
-                ),
-              )
-            : Image.asset(
-                'assets/images/logo.png',
-                width: size,
-                height: size,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Image.asset(
-                  'assets/images/ogo.png',
-                  width: size,
-                  height: size,
-                  fit: BoxFit.contain,
                 ),
               ),
 
@@ -67,7 +83,7 @@ class SheRideLogo extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'Women Ride Together',
-            style: TextStyle(
+            style: GoogleFonts.inter(
               color: isDark ? Colors.white70 : AppColors.textSecondary,
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -77,10 +93,10 @@ class SheRideLogo extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             'Safe Rides • Stronger Women • Brighter Cities',
-            style: TextStyle(
-              color: AppColors.primaryDark.withValues(alpha: 0.8),
+            style: GoogleFonts.inter(
+              color: AppColors.primaryDark.withValues(alpha: 0.85),
               fontSize: 10.5,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -101,8 +117,8 @@ class SheRideBannerLogo extends StatelessWidget {
     this.fit = BoxFit.contain,
   });
 
-  // banner-logo.png natural dimensions are 500x179 (~2.793:1 aspect ratio)
-  static const double bannerAspectRatio = 500.0 / 179.0;
+  // bannerlog.png natural dimensions are 731x240 (~3.0458:1 aspect ratio)
+  static const double bannerAspectRatio = 731.0 / 240.0;
 
   @override
   Widget build(BuildContext context) {
@@ -115,33 +131,36 @@ class SheRideBannerLogo extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: bannerAspectRatio,
         child: Image.asset(
-          'assets/images/banner_logo.png',
+          'assets/images/bannerlog.png',
           fit: fit,
           errorBuilder: (_, __, ___) => Image.asset(
-            'assets/images/logo.png',
+            'assets/images/banner_logo.png',
             fit: fit,
-            errorBuilder: (_, __, ___) => Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE91E63),
-                    shape: BoxShape.circle,
+            errorBuilder: (_, __, ___) => Image.asset(
+              'assets/images/final-logo1-1.jpeg',
+              fit: fit,
+              errorBuilder: (_, __, ___) => Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Lady ',
+                    style: GoogleFonts.fraunces(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.secondary,
+                    ),
                   ),
-                  child: const Icon(Icons.female_rounded, color: Colors.white, size: 20),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'SheRide',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFE91E63),
+                  Text(
+                    'pilot',
+                    style: GoogleFonts.fraunces(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -149,5 +168,3 @@ class SheRideBannerLogo extends StatelessWidget {
     );
   }
 }
-
-

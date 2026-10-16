@@ -41,8 +41,12 @@ class _SearchingRiderScreenState extends State<SearchingRiderScreen> with Single
         if (updatedRide.status == 'accepted') {
           context.go('/rider-assigned', extra: {'ride': updatedRide});
         } else if (updatedRide.status == 'cancelled') {
+          final isByAdmin = updatedRide.cancelledBy == 'admin';
+          final msg = isByAdmin
+              ? '⚠️ Ride cancelled by SheRide Support${updatedRide.cancelReason != null ? ": ${updatedRide.cancelReason}" : ""}'
+              : 'Ride was cancelled';
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ride was cancelled'), backgroundColor: AppColors.error),
+            SnackBar(content: Text(msg), backgroundColor: AppColors.error),
           );
           context.go('/home');
         }
@@ -152,7 +156,7 @@ class _SearchingRiderScreenState extends State<SearchingRiderScreen> with Single
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.pink.shade50,
+                        color: const Color(0xFFF0EEFD),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(

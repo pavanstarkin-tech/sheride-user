@@ -35,7 +35,7 @@ class TripDetailsScreen extends StatelessWidget {
     final platformFee = (ride.fare * 0.10).clamp(3.0, 15.0);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: SafeArea(
         child: Column(
           children: [
@@ -67,7 +67,7 @@ class TripDetailsScreen extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Trip Details',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         color: const Color(0xFF1A1A1A),
@@ -79,11 +79,11 @@ class TripDetailsScreen extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Trip receipt sent to your registered email! 🌸'),
-                          backgroundColor: Color(0xFFE91E63),
+                          backgroundColor: Color(0xFF7F00FD),
                         ),
                       );
                     },
-                    icon: const Icon(Icons.receipt_long_rounded, color: Color(0xFFE91E63)),
+                    icon: const Icon(Icons.receipt_long_rounded, color: Color(0xFF7F00FD)),
                   ),
                 ],
               ),
@@ -102,12 +102,12 @@ class TripDetailsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFE91E63).withValues(alpha: 0.06),
+                          color: const Color(0xFF7F00FD).withValues(alpha: 0.06),
                           blurRadius: 16,
                           offset: const Offset(0, 4),
                         ),
                       ],
-                      border: Border.all(color: const Color(0xFFFCE4EC)),
+                      border: Border.all(color: const Color(0xFFF0EEFD)),
                     ),
                     child: Column(
                       children: [
@@ -131,7 +131,7 @@ class TripDetailsScreen extends StatelessWidget {
                                   const SizedBox(width: 5),
                                   Text(
                                     ride.status.toUpperCase(),
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w800,
                                       color: isCompleted ? const Color(0xFF2E7D32) : const Color(0xFFE53935),
@@ -142,7 +142,7 @@ class TripDetailsScreen extends StatelessWidget {
                             ),
                             Text(
                               '$dateFormatted • $timeFormatted',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFF757575),
@@ -153,7 +153,7 @@ class TripDetailsScreen extends StatelessWidget {
                         const SizedBox(height: 18),
                         Text(
                           '₹${ride.fare.toStringAsFixed(1)}',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 34,
                             fontWeight: FontWeight.w900,
                             color: const Color(0xFF1A1A1A),
@@ -163,15 +163,15 @@ class TripDetailsScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFF0F5),
+                            color: const Color(0xFFF0EEFD),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             'Paid via ${ride.paymentMethod.toUpperCase()}',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFFE91E63),
+                              color: const Color(0xFF7F00FD),
                             ),
                           ),
                         ),
@@ -215,7 +215,7 @@ class TripDetailsScreen extends StatelessWidget {
                           children: [
                             Text(
                               'Captain Details',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF1A1A1A),
@@ -224,15 +224,15 @@ class TripDetailsScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFF0F5),
+                                color: const Color(0xFFF0EEFD),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 'Verified Female Partner 🌸',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.inter(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFFE91E63),
+                                  color: const Color(0xFF7F00FD),
                                 ),
                               ),
                             ),
@@ -243,7 +243,7 @@ class TripDetailsScreen extends StatelessWidget {
                           children: [
                             CircleAvatar(
                               radius: 26,
-                              backgroundColor: const Color(0xFFFCE4EC),
+                              backgroundColor: const Color(0xFFF0EEFD),
                               backgroundImage: NetworkImage(captainPhoto),
                             ),
                             const SizedBox(width: 14),
@@ -253,7 +253,7 @@ class TripDetailsScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     captainName,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 15.5,
                                       fontWeight: FontWeight.w800,
                                       color: const Color(0xFF1A1A1A),
@@ -266,7 +266,7 @@ class TripDetailsScreen extends StatelessWidget {
                                       const SizedBox(width: 3),
                                       Text(
                                         '$captainRating (248 rides)',
-                                        style: GoogleFonts.plusJakartaSans(
+                                        style: GoogleFonts.inter(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,
                                           color: const Color(0xFF424242),
@@ -277,7 +277,7 @@ class TripDetailsScreen extends StatelessWidget {
                                   const SizedBox(height: 2),
                                   Text(
                                     '${_formatVehicleType(ride.vehicleType)} • $vehiclePlate',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 11.5,
                                       fontWeight: FontWeight.w600,
                                       color: const Color(0xFF757575),
@@ -312,7 +312,7 @@ class TripDetailsScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Route & Travel Path',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF1A1A1A),
@@ -339,7 +339,7 @@ class TripDetailsScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     'Pickup Location',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w700,
                                       color: const Color(0xFF757575),
@@ -347,7 +347,7 @@ class TripDetailsScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     ride.pickup.name?.isNotEmpty == true ? ride.pickup.name! : ride.pickup.address,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 13.5,
                                       fontWeight: FontWeight.w700,
                                       color: const Color(0xFF1A1A1A),
@@ -355,7 +355,7 @@ class TripDetailsScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     ride.pickup.address,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 11,
                                       color: const Color(0xFF757575),
                                     ),
@@ -383,10 +383,10 @@ class TripDetailsScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(7),
                               decoration: const BoxDecoration(
-                                color: Color(0xFFFFF0F5),
+                                color: Color(0xFFF0EEFD),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.location_on_rounded, size: 15, color: Color(0xFFE91E63)),
+                              child: const Icon(Icons.location_on_rounded, size: 15, color: Color(0xFF7F00FD)),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -395,7 +395,7 @@ class TripDetailsScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     'Drop Destination',
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w700,
                                       color: const Color(0xFF757575),
@@ -403,7 +403,7 @@ class TripDetailsScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     ride.drop.name?.isNotEmpty == true ? ride.drop.name! : ride.drop.address,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 13.5,
                                       fontWeight: FontWeight.w700,
                                       color: const Color(0xFF1A1A1A),
@@ -411,7 +411,7 @@ class TripDetailsScreen extends StatelessWidget {
                                   ),
                                   Text(
                                     ride.drop.address,
-                                    style: GoogleFonts.plusJakartaSans(
+                                    style: GoogleFonts.inter(
                                       fontSize: 11,
                                       color: const Color(0xFF757575),
                                     ),
@@ -445,7 +445,7 @@ class TripDetailsScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Fare Breakdown & Invoice',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF1A1A1A),
@@ -461,7 +461,7 @@ class TripDetailsScreen extends StatelessWidget {
                           children: [
                             Text(
                               'Total Amount Paid',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF1A1A1A),
@@ -469,10 +469,10 @@ class TripDetailsScreen extends StatelessWidget {
                             ),
                             Text(
                               '₹${ride.fare.toStringAsFixed(1)}',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
-                                color: const Color(0xFFE91E63),
+                                color: const Color(0xFF7F00FD),
                               ),
                             ),
                           ],
@@ -496,7 +496,7 @@ class TripDetailsScreen extends StatelessWidget {
                       icon: const Icon(Icons.help_outline_rounded, size: 18),
                       label: Text(
                         'Need Help with this Trip?',
-                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -513,11 +513,11 @@ class TripDetailsScreen extends StatelessWidget {
   Widget _buildStatItem(IconData icon, String value, String label) {
     return Column(
       children: [
-        Icon(icon, size: 18, color: const Color(0xFFE91E63)),
+        Icon(icon, size: 18, color: const Color(0xFF7F00FD)),
         const SizedBox(height: 4),
         Text(
           value,
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.inter(
             fontSize: 13.5,
             fontWeight: FontWeight.w800,
             color: const Color(0xFF1A1A1A),
@@ -525,7 +525,7 @@ class TripDetailsScreen extends StatelessWidget {
         ),
         Text(
           label,
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.inter(
             fontSize: 10.5,
             color: const Color(0xFF757575),
           ),
@@ -542,11 +542,11 @@ class TripDetailsScreen extends StatelessWidget {
         children: [
           Text(
             title,
-            style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: const Color(0xFF616161)),
+            style: GoogleFonts.inter(fontSize: 12.5, color: const Color(0xFF616161)),
           ),
           Text(
             amount,
-            style: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A1A)),
+            style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A1A)),
           ),
         ],
       ),

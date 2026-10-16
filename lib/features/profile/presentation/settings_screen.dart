@@ -20,11 +20,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       appBar: AppBar(
         title: Text(
           'App Settings & Preferences',
-          style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
+          style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A1A)),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -62,27 +62,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeTrackColor: const Color(0xFFE91E63),
-                  title: Text('100% Female Captain Priority', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                  subtitle: Text('Always prioritize verified women riders & drivers', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: Colors.grey)),
+                  activeTrackColor: const Color(0xFF7F00FD),
+                  title: Text('100% Female Captain Priority', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  subtitle: Text('Always prioritize verified women riders & drivers', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
                   value: _femaleCaptainPriority,
                   onChanged: (v) => setState(() => _femaleCaptainPriority = v),
                 ),
                 const Divider(height: 1),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeTrackColor: const Color(0xFFE91E63),
-                  title: Text('Silent Ride Mode', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                  subtitle: Text('Inform captain to minimize conversation during ride', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: Colors.grey)),
+                  activeTrackColor: const Color(0xFF7F00FD),
+                  title: Text('Silent Ride Mode', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  subtitle: Text('Inform captain to minimize conversation during ride', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
                   value: _silentRidePreference,
                   onChanged: (v) => setState(() => _silentRidePreference = v),
                 ),
                 const Divider(height: 1),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeTrackColor: const Color(0xFFE91E63),
-                  title: Text('AC Always Preferred', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                  subtitle: Text('Request AC turned on in all car bookings', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: Colors.grey)),
+                  activeTrackColor: const Color(0xFF7F00FD),
+                  title: Text('AC Always Preferred', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  subtitle: Text('Request AC turned on in all car bookings', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
                   value: _acPreference,
                   onChanged: (v) => setState(() => _acPreference = v),
                 ),
@@ -100,18 +100,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeTrackColor: const Color(0xFFE91E63),
-                  title: Text('Push Notifications', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                  subtitle: Text('Real-time trip updates and captain arrival alerts', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: Colors.grey)),
+                  activeTrackColor: const Color(0xFF7F00FD),
+                  title: Text('Push Notifications', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  subtitle: Text('Real-time trip updates and captain arrival alerts', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
                   value: _pushNotifications,
                   onChanged: (v) => setState(() => _pushNotifications = v),
                 ),
                 const Divider(height: 1),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  activeTrackColor: const Color(0xFFE91E63),
-                  title: Text('Emergency SMS Alerts to Family', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13.5)),
-                  subtitle: Text('Auto-send SMS with live GPS link on trip start', style: GoogleFonts.plusJakartaSans(fontSize: 11, color: Colors.grey)),
+                  activeTrackColor: const Color(0xFF7F00FD),
+                  title: Text('Emergency SMS Alerts to Family', style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  subtitle: Text('Auto-send SMS with live GPS link on trip start', style: GoogleFonts.inter(fontSize: 11, color: Colors.grey)),
                   value: _smsAlerts,
                   onChanged: (v) => setState(() => _smsAlerts = v),
                 ),
@@ -123,17 +123,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ElevatedButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings saved! 🌸'), backgroundColor: Color(0xFFE91E63)),
+                const SnackBar(content: Text('Settings saved! 🌸'), backgroundColor: Color(0xFF7F00FD)),
               );
               context.pop();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE91E63),
+              backgroundColor: const Color(0xFF7F00FD),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            child: Text('Save Preferences', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 15)),
+            child: Text('Save Preferences', style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 15)),
           ),
         ],
       ),
@@ -145,7 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Text(
         title,
-        style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF757575)),
+        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: const Color(0xFF757575)),
       ),
     );
   }
@@ -163,8 +163,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildLanguageRadio(String code, String label) {
     return RadioListTile<String>(
       contentPadding: EdgeInsets.zero,
-      activeColor: const Color(0xFFE91E63),
-      title: Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 13.5, fontWeight: FontWeight.w700)),
+      activeColor: const Color(0xFF7F00FD),
+      title: Text(label, style: GoogleFonts.inter(fontSize: 13.5, fontWeight: FontWeight.w700)),
       value: code,
       groupValue: _selectedLanguage,
       onChanged: (v) => setState(() => _selectedLanguage = v!),

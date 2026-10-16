@@ -27,11 +27,29 @@ import '../features/safety/presentation/safety_center_screen.dart';
 import '../features/services/presentation/services_screen.dart';
 import '../features/splash/presentation/splash_screen.dart';
 import '../features/support/presentation/support_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../features/wallet/presentation/wallet_screen.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/',
+    redirect: (BuildContext context, GoRouterState state) {
+      final user = FirebaseAuth.instance.currentUser;
+      final location = state.matchedLocation;
+      final publicRoutes = ['/', '/welcome', '/login', '/otp', '/register'];
+
+      // If user is NOT logged in and trying to access any protected screen
+      if (user == null && !publicRoutes.contains(location)) {
+        return '/welcome';
+      }
+
+      // If user IS logged in and sitting on auth/splash screens, send to home
+      if (user != null && (location == '/welcome' || location == '/login' || location == '/otp' || location == '/')) {
+        return '/home';
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/',

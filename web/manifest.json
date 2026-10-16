@@ -1,11 +1,11 @@
 {
-    "name": "sheride_user",
-    "short_name": "sheride_user",
+    "name": "SheRide - Safe Women Cabs, Auto & Scooty",
+    "short_name": "SheRide",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#7F00FD",
+    "theme_color": "#7F00FD",
+    "description": "100% Women-Driven, safe and verified rides for female passengers across India.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

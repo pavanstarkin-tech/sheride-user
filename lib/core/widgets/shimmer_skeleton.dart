@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 
 class ShimmerSkeleton extends StatefulWidget {
   final double width;
@@ -47,7 +48,7 @@ class _ShimmerSkeletonState extends State<ShimmerSkeleton> with SingleTickerProv
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
-            color: Colors.pink.shade100.withValues(alpha: _animation.value * 0.4),
+            color: AppColors.primaryLight.withValues(alpha: _animation.value * 0.4),
             borderRadius: BorderRadius.circular(widget.borderRadius),
           ),
         );

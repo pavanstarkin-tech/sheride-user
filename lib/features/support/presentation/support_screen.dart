@@ -43,32 +43,32 @@ class _SupportScreenState extends State<SupportScreen> {
             const SizedBox(height: 16),
             Text(
               'SheRide 24/7 Support Desk',
-              style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
+              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
             ),
             const SizedBox(height: 4),
             Text(
               'Connected to: $topic',
-              style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFFE91E63), fontWeight: FontWeight.w600),
+              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF7F00FD), fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF0F5),
+                color: const Color(0xFFF0EEFD),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
                 children: [
                   const CircleAvatar(
                     radius: 16,
-                    backgroundColor: Color(0xFFF8BBD0),
-                    child: Icon(Icons.support_agent_rounded, color: Color(0xFFE91E63), size: 18),
+                    backgroundColor: Color(0xFFEDDCFF),
+                    child: Icon(Icons.support_agent_rounded, color: Color(0xFF7F00FD), size: 18),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Hello! A woman support representative is ready to help you.',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF1A1A1A)),
+                      style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1A1A1A)),
                     ),
                   ),
                 ],
@@ -86,7 +86,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE91E63),
+                  backgroundColor: const Color(0xFF7F00FD),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                 ),
@@ -102,7 +102,7 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7FA),
+      backgroundColor: const Color(0xFFF6F6FE),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -135,7 +135,7 @@ class _SupportScreenState extends State<SupportScreen> {
                       children: [
                         Text(
                           'Help & Support',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: const Color(0xFF1A1A1A),
@@ -143,7 +143,7 @@ class _SupportScreenState extends State<SupportScreen> {
                         ),
                         Text(
                           "We're here for you, always.",
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFF757575),
@@ -180,10 +180,10 @@ class _SupportScreenState extends State<SupportScreen> {
                     Expanded(
                       child: TextField(
                         controller: _searchController,
-                        style: GoogleFonts.plusJakartaSans(fontSize: 13.5, color: const Color(0xFF1A1A1A)),
+                        style: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF1A1A1A)),
                         decoration: InputDecoration(
                           hintText: 'Search for help...',
-                          hintStyle: GoogleFonts.plusJakartaSans(fontSize: 13.5, color: const Color(0xFF9E9E9E)),
+                          hintStyle: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF9E9E9E)),
                           border: InputBorder.none,
                           isDense: true,
                         ),
@@ -284,8 +284,8 @@ class _SupportScreenState extends State<SupportScreen> {
                       icon: Icons.phone_android_rounded,
                       title: 'App Support',
                       subtitle: 'Technical help & account support',
-                      iconBg: const Color(0xFFFCE4EC),
-                      iconColor: const Color(0xFFE91E63),
+                      iconBg: const Color(0xFFF0EEFD),
+                      iconColor: const Color(0xFF7F00FD),
                       onTap: () => _showChatDialog('App Technical Support'),
                     ),
                   ],
@@ -330,7 +330,7 @@ class _SupportScreenState extends State<SupportScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF1A1A1A),
@@ -339,7 +339,7 @@ class _SupportScreenState extends State<SupportScreen> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF757575),
