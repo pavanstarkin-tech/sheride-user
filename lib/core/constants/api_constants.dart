@@ -2,12 +2,14 @@ class ApiConstants {
   ApiConstants._();
 
   // Hostinger PHP Backend Base URL
-  static const String baseUrl = 'https://api.sheride.app/api';
+  static const String baseUrl = 'https://farmx.acheva.in/api';
 
   // Endpoints
   static const String registerUser = '$baseUrl/register_user.php';
   static const String registerRider = '$baseUrl/register_rider.php';
   static const String updateProfile = '$baseUrl/update_profile.php';
+  static const String saveFcmToken = '$baseUrl/save_fcm_token.php';
+  static const String sendRideNotification = '$baseUrl/send_ride_notification.php';
 
   // Mapbox Configuration (Joined dynamically to prevent GitHub Push Protection scanner false positive)
   static String get mapboxAccessToken => 

@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import '../constants/api_constants.dart';
 
 class FcmTokenService {
   static final FcmTokenService _instance = FcmTokenService._internal();
@@ -35,7 +38,7 @@ class FcmTokenService {
     }
 
     final now = DateTime.now().millisecondsSinceEpoch;
-    final platform = kIsWeb ? 'web' : 'mobile';
+    final platform = kIsWeb ? 'web' : 'android';
 
     // 1. Save in Firebase Realtime Database
     final db = _db;
@@ -61,7 +64,7 @@ class FcmTokenService {
       }
     }
 
-    // 2. Dispatch to PHP REST endpoint in background
+    // 2. Dispatch to live Hostinger PHP REST endpoint: save_fcm_token.php
     _syncTokenWithBackend(uid, token, role, platform);
 
     return token;
@@ -69,15 +72,27 @@ class FcmTokenService {
 
   /// Background sync to PHP API save_fcm_token.php
   void _syncTokenWithBackend(String uid, String token, String role, String platform) {
-    // Non-blocking best-effort sync
     try {
-      // In web or Flutter runtime, direct DB write above guarantees delivery.
-      // We also attempt background notify to Hostinger API endpoint.
-      debugPrint('FCM Token registered for $uid ($role): $token');
+      final url = Uri.parse(ApiConstants.saveFcmToken);
+      http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'uid': uid,
+          'token': token,
+          'fcmToken': token,
+          'role': role,
+          'platform': platform,
+        }),
+      ).then((res) {
+        debugPrint('FCM Token registered with API [${res.statusCode}]: ${res.body}');
+      }).catchError((err) {
+        debugPrint('FCM Token API sync warning: $err');
+      });
     } catch (_) {}
   }
 
-  /// Dispatch ride notification to passenger or pilot via PHP Cloud Function & RTDB
+  /// Dispatch ride notification to passenger or pilot via PHP Cloud Endpoint & RTDB
   Future<void> sendRidePushNotification({
     required String rideId,
     required String event,
@@ -117,5 +132,23 @@ class FcmTokenService {
         debugPrint('Push notification RTDB dispatch warning: $e');
       }
     }
+
+    // Also trigger live PHP push notification endpoint on farmx.acheva.in
+    try {
+      final url = Uri.parse(ApiConstants.sendRideNotification);
+      http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'rideId': rideId,
+          'event': event,
+          'targetUid': targetUid,
+          'passengerUid': targetUid,
+          'title': title,
+          'body': body,
+          ...data,
+        }),
+      ).catchError((_) => http.Response('', 500));
+    } catch (_) {}
   }
 }
