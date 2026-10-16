@@ -14,7 +14,7 @@ class OfferService {
   static final List<OfferModel> defaultOffers = [
     OfferModel(
       offerId: 'offer_1',
-      code: 'SHERIDE50',
+      code: 'LADY PILOT50',
       title: 'FLAT 50% OFF',
       description: 'Get 50% off up to ₹60 on your first 5 rides',
       discountType: 'percentage',

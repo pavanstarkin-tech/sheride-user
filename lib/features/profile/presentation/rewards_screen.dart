@@ -8,7 +8,7 @@ class RewardsScreen extends StatelessWidget {
 
   final List<Map<String, dynamic>> _coupons = const [
     {
-      'code': 'SHERIDE50',
+      'code': 'LADY PILOT50',
       'discount': '50% OFF',
       'desc': 'Up to ₹50 on all Scooty & Auto rides in your city',
       'expiry': 'Valid till 31 Oct 2026',
@@ -105,7 +105,7 @@ class RewardsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Invite your friends & women colleagues to SheRide. You both receive ₹50 wallet credit on their first completed ride.',
+                    'Invite your friends & women colleagues to Lady Pilot. You both receive ₹50 wallet credit on their first completed ride.',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: Colors.white.withValues(alpha: 0.9),
@@ -131,14 +131,14 @@ class RewardsScreen extends StatelessWidget {
                               style: GoogleFonts.inter(fontSize: 9.5, fontWeight: FontWeight.w700, color: const Color(0xFF757575)),
                             ),
                             Text(
-                              'SHERIDE987',
+                              'LADY PILOT987',
                               style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w900, color: const Color(0xFF7F00FD)),
                             ),
                           ],
                         ),
                         ElevatedButton.icon(
                           onPressed: () {
-                            Clipboard.setData(const ClipboardData(text: 'SHERIDE987'));
+                            Clipboard.setData(const ClipboardData(text: 'LADY PILOT987'));
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Referral code copied to clipboard! 🌸'), backgroundColor: Color(0xFF7F00FD)),
                             );

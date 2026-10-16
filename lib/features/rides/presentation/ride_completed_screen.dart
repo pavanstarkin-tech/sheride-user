@@ -43,7 +43,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Thank you for rating your SheRide captain! 🌸'),
+          content: Text('Thank you for rating your Lady Pilot captain! 🌸'),
           backgroundColor: Color(0xFF7F00FD),
         ),
       );
@@ -178,7 +178,7 @@ class _RideCompletedScreenState extends State<RideCompletedScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Thank you for riding with SheRide\nSee you again soon!',
+                'Thank you for riding with Lady Pilot\nSee you again soon!',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 12.5,

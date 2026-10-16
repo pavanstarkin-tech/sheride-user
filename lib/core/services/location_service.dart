@@ -220,7 +220,7 @@ class LocationService {
         'https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng&zoom=18&addressdetails=1',
       );
       final res = await http.get(nominatimUrl, headers: {
-        'User-Agent': 'SheRide-WomenSafetyApp/1.0',
+        'User-Agent': 'Lady Pilot-WomenSafetyApp/1.0',
       }).timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);

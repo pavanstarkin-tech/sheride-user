@@ -43,7 +43,7 @@ class _SearchingRiderScreenState extends State<SearchingRiderScreen> with Single
         } else if (updatedRide.status == 'cancelled') {
           final isByAdmin = updatedRide.cancelledBy == 'admin';
           final msg = isByAdmin
-              ? '⚠️ Ride cancelled by SheRide Support${updatedRide.cancelReason != null ? ": ${updatedRide.cancelReason}" : ""}'
+              ? '⚠️ Ride cancelled by Lady Pilot Support${updatedRide.cancelReason != null ? ": ${updatedRide.cancelReason}" : ""}'
               : 'Ride was cancelled';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(msg), backgroundColor: AppColors.error),

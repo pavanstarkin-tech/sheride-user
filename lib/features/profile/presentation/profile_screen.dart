@@ -37,7 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Logout from SheRide?', style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
+        title: Text('Logout from Lady Pilot?', style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
         content: const Text('You will need to sign in again to book rides.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
@@ -63,7 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currentUser = auth.currentUser;
     final name = _profile?.name.isNotEmpty == true
         ? _profile!.name
-        : (currentUser?.displayName?.isNotEmpty == true ? currentUser!.displayName! : 'SheRide Member');
+        : (currentUser?.displayName?.isNotEmpty == true ? currentUser!.displayName! : 'Lady Pilot Member');
     final email = _profile?.email.isNotEmpty == true
         ? _profile!.email
         : (currentUser?.email?.isNotEmpty == true ? currentUser!.email! : (currentUser?.phoneNumber ?? 'No email set'));
@@ -247,7 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const Divider(height: 1, color: Color(0xFFF5F5F5)),
 
-                    // 2. Payment Methods & SheRide Wallet
+                    // 2. Payment Methods & Lady Pilot Wallet
                     _buildMenuItem(
                       icon: Icons.account_balance_wallet_outlined,
                       title: 'Payment Methods & Wallet',
@@ -313,10 +313,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const Divider(height: 1, color: Color(0xFFF5F5F5)),
 
-                    // 10. About SheRide & Legal
+                    // 10. About Lady Pilot & Legal
                     _buildMenuItem(
                       icon: Icons.info_outline_rounded,
-                      title: 'About SheRide & Legal',
+                      title: 'About Lady Pilot & Legal',
                       onTap: () => context.push('/about'),
                     ),
                     const Divider(height: 1, color: Color(0xFFF5F5F5)),

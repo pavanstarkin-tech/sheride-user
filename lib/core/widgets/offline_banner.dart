@@ -35,7 +35,7 @@ class OfflineBanner extends StatelessWidget {
                           const Icon(Icons.wifi_off_rounded, color: Colors.amber, size: 16),
                           const SizedBox(width: 8),
                           const Text(
-                            'You are offline. Reconnecting to SheRide network...',
+                            'You are offline. Reconnecting to Lady Pilot network...',
                             style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                         ],

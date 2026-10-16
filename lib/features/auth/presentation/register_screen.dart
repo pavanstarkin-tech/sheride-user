@@ -234,7 +234,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Gender Field (Locked to Female for SheRide)
+                  // Gender Field (Locked to Female for Lady Pilot)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -290,7 +290,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 28),
 
                   CustomButton(
-                    text: 'Complete & Enter SheRide →',
+                    text: 'Complete & Enter Lady Pilot →',
                     isLoading: _isLoading,
                     onPressed: _handleRegister,
                   ),

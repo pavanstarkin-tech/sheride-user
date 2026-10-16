@@ -847,7 +847,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
             const SizedBox(height: 14),
             _buildPaymentOption('Cash', 'Pay cash directly to Captain', Icons.money_rounded, ctx),
             _buildPaymentOption('UPI', 'Google Pay / PhonePe / Paytm', Icons.qr_code_2_rounded, ctx),
-            _buildPaymentOption('Wallet', 'SheRide Wallet Balance', Icons.account_balance_wallet_rounded, ctx),
+            _buildPaymentOption('Wallet', 'Lady Pilot Wallet Balance', Icons.account_balance_wallet_rounded, ctx),
           ],
         ),
       ),
@@ -1228,7 +1228,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
             if (byAdmin && mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('⚠️ Ride cancelled by SheRide Support${reason != null && reason.isNotEmpty ? ": $reason" : ""}'),
+                  content: Text('⚠️ Ride cancelled by Lady Pilot Support${reason != null && reason.isNotEmpty ? ": $reason" : ""}'),
                   backgroundColor: AppColors.error,
                   duration: const Duration(seconds: 4),
                 ),

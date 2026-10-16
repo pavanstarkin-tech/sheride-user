@@ -318,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('⚠️ Account Suspended'),
         content: const Text(
-          'Your SheRide passenger account has been temporarily restricted by SheRide Mission Control. Please contact SheRide Support for assistance.',
+          'Your Lady Pilot passenger account has been temporarily restricted by Lady Pilot Mission Control. Please contact Lady Pilot Support for assistance.',
         ),
         actions: [
           TextButton(

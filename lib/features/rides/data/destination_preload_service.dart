@@ -179,7 +179,7 @@ class DestinationPreloadService extends ChangeNotifier {
           'https://en.wikipedia.org/w/api.php?action=query&generator=geosearch'
           '&ggscoord=$targetLat|$targetLng&ggsradius=20000&ggslimit=10&prop=pageimages|coordinates&pithumbsize=600&format=json',
         );
-        final gResp = await http.get(geoUrl, headers: {'User-Agent': 'SheRideApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 4));
+        final gResp = await http.get(geoUrl, headers: {'User-Agent': 'Lady PilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 4));
         if (gResp.statusCode == 200) {
           final gData = jsonDecode(gResp.body);
           final pages = gData['query']?['pages'] as Map<String, dynamic>?;
@@ -362,7 +362,7 @@ class DestinationPreloadService extends ChangeNotifier {
         'https://en.wikipedia.org/w/api.php?action=query&generator=search'
         '&gsrsearch=${Uri.encodeComponent(placeName)}&prop=pageimages&pithumbsize=600&format=json',
       );
-      final wResp = await http.get(wikiUrl, headers: {'User-Agent': 'SheRideApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 3));
+      final wResp = await http.get(wikiUrl, headers: {'User-Agent': 'Lady PilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 3));
       if (wResp.statusCode == 200) {
         final wData = jsonDecode(wResp.body);
         final pages = wData['query']?['pages'] as Map<String, dynamic>?;

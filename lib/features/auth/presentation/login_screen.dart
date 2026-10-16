@@ -65,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final userName = credential.user?.displayName ?? 'Passenger';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Welcome to SheRide, $userName! 🌸'),
+            content: Text('Welcome to Lady Pilot, $userName! 🌸'),
             backgroundColor: AppColors.primary,
           ),
         );
@@ -303,7 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
       [
         {
           'title': '1. Verified Female Captains Only',
-          'content': 'Every captain undergoes comprehensive identity validation, background checks, license verification, and facial recognition before being approved to drive on SheRide.'
+          'content': 'Every captain undergoes comprehensive identity validation, background checks, license verification, and facial recognition before being approved to drive on Lady Pilot.'
         },
         {
           'title': '2. Live Ride GPS Tracking & Safe Route Alerts',
@@ -328,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
       [
         {
           'title': '1. Eligibility & Women-Only Community',
-          'content': 'SheRide is exclusively designed for women passengers and women drivers. Account holders must provide accurate and verifiable personal details.'
+          'content': 'Lady Pilot is exclusively designed for women passengers and women drivers. Account holders must provide accurate and verifiable personal details.'
         },
         {
           'title': '2. Booking & Cancellation Policy',
@@ -365,7 +365,7 @@ class _LoginScreenState extends State<LoginScreen> {
         },
         {
           'title': '4. No Third-Party Data Sharing',
-          'content': 'SheRide does not sell, lease, or monetize personal user information with external advertisers.'
+          'content': 'Lady Pilot does not sell, lease, or monetize personal user information with external advertisers.'
         },
       ],
     );

@@ -42,7 +42,7 @@ class _SupportScreenState extends State<SupportScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'SheRide 24/7 Support Desk',
+              'Lady Pilot 24/7 Support Desk',
               style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A1A)),
             ),
             const SizedBox(height: 4),
@@ -229,7 +229,7 @@ class _SupportScreenState extends State<SupportScreen> {
                       iconColor: const Color(0xFF2E7D32),
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Calling SheRide 24/7 Women Helpline (1800-SHERIDE)...')),
+                          const SnackBar(content: Text('Calling Lady Pilot 24/7 Women Helpline (1800-LADY PILOT)...')),
                         );
                       },
                     ),

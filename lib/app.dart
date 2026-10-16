@@ -16,7 +16,7 @@ class SheRideUserApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthService()),
       ],
       child: MaterialApp.router(
-        title: 'SheRide User',
+        title: 'Lady Pilot Passenger',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         routerConfig: AppRouter.router,

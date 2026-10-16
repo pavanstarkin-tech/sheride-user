@@ -376,7 +376,7 @@ class AuthService extends ChangeNotifier {
   String _mapAuthError(String code, String? defaultMsg) {
     switch (code) {
       case 'user-not-found':
-        return 'No SheRide account found with this email.';
+        return 'No Lady Pilot account found with this email.';
       case 'wrong-password':
       case 'invalid-credential':
         return 'Incorrect password. Please try again or reset your password.';
@@ -387,7 +387,7 @@ class AuthService extends ChangeNotifier {
       case 'weak-password':
         return 'Password should be at least 6 characters long.';
       case 'user-disabled':
-        return 'This account has been disabled. Please contact SheRide Support.';
+        return 'This account has been disabled. Please contact Lady Pilot Support.';
       case 'too-many-requests':
         return 'Too many attempts. Please wait a moment and try again.';
       default:
@@ -451,7 +451,7 @@ class AuthService extends ChangeNotifier {
           ? user.displayName!
           : (googleUser?.displayName?.isNotEmpty == true
               ? googleUser!.displayName!
-              : (user.email?.split('@').first ?? 'SheRide Passenger'));
+              : (user.email?.split('@').first ?? 'Lady Pilot Passenger'));
       final email = user.email ?? (googleUser?.email ?? '');
       final photoUrl = user.photoURL ?? (googleUser?.photoUrl ?? '');
 
@@ -483,7 +483,7 @@ class AuthService extends ChangeNotifier {
           'lastLoginAt': now,
         };
         if (photoUrl.isNotEmpty) updates['profileImageUrl'] = photoUrl;
-        if (name.isNotEmpty && name != 'SheRide Passenger') updates['name'] = name;
+        if (name.isNotEmpty && name != 'Lady Pilot Passenger') updates['name'] = name;
         if (email.isNotEmpty) updates['email'] = email;
 
         await userRef.update(updates);

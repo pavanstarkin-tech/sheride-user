@@ -45,7 +45,7 @@ class WelcomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // SheRide Banner Logo & Tagline Header
+                  // Lady Pilot Banner Logo & Tagline Header
                   const SizedBox(height: 8),
                   const SheRideBannerLogo(height: 48),
                   const SizedBox(height: 6),

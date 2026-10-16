@@ -32,7 +32,7 @@ class NotificationService {
     try {
       const androidDetails = AndroidNotificationDetails(
         'sheride_safety_channel',
-        'SheRide Safety & Updates',
+        'Lady Pilot Safety & Updates',
         channelDescription: 'Notifications for ride status and safety alerts',
         importance: Importance.max,
         priority: Priority.high,

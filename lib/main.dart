@@ -16,11 +16,11 @@ void main() async {
   // Production Global Error Boundary
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    debugPrint('[SheRide User Error Boundary] ${details.exceptionAsString()}');
+    debugPrint('[Lady Pilot Passenger Error Boundary] ${details.exceptionAsString()}');
   };
 
   PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
-    debugPrint('[SheRide User Async Exception] $error');
+    debugPrint('[Lady Pilot Passenger Async Exception] $error');
     return true; // Handled
   };
 

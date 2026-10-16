@@ -26,7 +26,7 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
           ],
         ),
         content: Text(
-          'This will immediately alert your emergency contacts and the 24/7 SheRide Women Safety Command Center with your live GPS location.',
+          'This will immediately alert your emergency contacts and the 24/7 Lady Pilot Women Safety Command Center with your live GPS location.',
           style: GoogleFonts.inter(fontSize: 13),
         ),
         actions: [
@@ -177,7 +177,7 @@ class _SafetyCenterScreenState extends State<SafetyCenterScreen> {
                       iconColor: const Color(0xFF7F00FD),
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('100% of SheRide captains undergo police verification & safety training.')),
+                          const SnackBar(content: Text('100% of Lady Pilot captains undergo police verification & safety training.')),
                         );
                       },
                     ),

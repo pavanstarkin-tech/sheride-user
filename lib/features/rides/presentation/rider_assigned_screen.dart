@@ -48,7 +48,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
         } else if (updated.status == 'cancelled') {
           final isByAdmin = updated.cancelledBy == 'admin';
           final msg = isByAdmin
-              ? '⚠️ Ride cancelled by SheRide Support${updated.cancelReason != null ? ": ${updated.cancelReason}" : ""}'
+              ? '⚠️ Ride cancelled by Lady Pilot Support${updated.cancelReason != null ? ": ${updated.cancelReason}" : ""}'
               : 'Ride was cancelled';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(msg), backgroundColor: AppColors.error),
@@ -180,7 +180,7 @@ class _RiderAssignedScreenState extends State<RiderAssignedScreen> {
                           ),
                         ),
                         Text(
-                          'Your SheRide is on the way!',
+                          'Your Lady Pilot is on the way!',
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,

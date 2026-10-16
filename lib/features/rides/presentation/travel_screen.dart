@@ -153,7 +153,7 @@ class _TravelScreenState extends State<TravelScreen> with SingleTickerProviderSt
               ),
               const SizedBox(height: 6),
               Text(
-                'Book a ride from Home or Services to track your SheRide Captain live on the map.',
+                'Book a ride from Home or Services to track your Lady Pilot Captain live on the map.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 12.5,

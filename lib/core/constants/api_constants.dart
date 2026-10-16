@@ -24,7 +24,7 @@ class ApiConstants {
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'SheRide';
+  static const String appName = 'Lady Pilot';
   static const String appTagline = 'Women Ride Together';
   static const String subTagline = 'Safe Rides • Stronger Women • Brighter Cities';
   static const String heroTitle = 'Rides\nBy Women\nFor Women.';

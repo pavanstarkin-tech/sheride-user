@@ -59,7 +59,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
         } else if (updated.status == 'cancelled') {
           final isByAdmin = updated.cancelledBy == 'admin';
           final msg = isByAdmin
-              ? '⚠️ Ride cancelled by SheRide Support${updated.cancelReason != null ? ": ${updated.cancelReason}" : ""}'
+              ? '⚠️ Ride cancelled by Lady Pilot Support${updated.cancelReason != null ? ": ${updated.cancelReason}" : ""}'
               : 'Ride was cancelled';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(msg), backgroundColor: AppColors.error),
