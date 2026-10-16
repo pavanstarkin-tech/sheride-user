@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -19,7 +20,31 @@ import 'widgets/place_card_image_slider.dart';
 /// 2. Extract Mapbox POI mapbox_id
 /// 3. Retrieve place details with attribute_sets=photos (/retrieve)
 /// 4. Extract photo URL from metadata.photos
-/// 5. Display the actual place image (with graceful Mapbox Static Map fallback)
+/// Real photographs for popular Indian place categories
+String _getCategoryRealPhoto(String name) {
+  final n = name.toLowerCase();
+  if (n.contains('railway') || n.contains('station') || n.contains('train')) {
+    return 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80';
+  } else if (n.contains('bus') || n.contains('stand') || n.contains('complex') || n.contains('terminal')) {
+    return 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&auto=format&fit=crop&q=80';
+  } else if (n.contains('mall') || n.contains('shopping') || n.contains('center') || n.contains('centre')) {
+    return 'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=600&auto=format&fit=crop&q=80';
+  } else if (n.contains('hospital') || n.contains('clinic') || n.contains('care') || n.contains('medical')) {
+    return 'https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=600&auto=format&fit=crop&q=80';
+  } else if (n.contains('temple') || n.contains('mandir') || n.contains('church') || n.contains('masjid')) {
+    return 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=600&auto=format&fit=crop&q=80';
+  } else if (n.contains('college') || n.contains('school') || n.contains('university') || n.contains('campus')) {
+    return 'https://images.unsplash.com/photo-1562774053-701939374585?w=600&auto=format&fit=crop&q=80';
+  } else if (n.contains('airport') || n.contains('flight')) {
+    return 'https://images.unsplash.com/photo-1530521954074-e64f6810b32d?w=600&auto=format&fit=crop&q=80';
+  } else if (n.contains('hotel') || n.contains('resort') || n.contains('stay') || n.contains('inn')) {
+    return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=80';
+  } else if (n.contains('park') || n.contains('garden') || n.contains('river') || n.contains('lake') || n.contains('ghat')) {
+    return 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80';
+  }
+  return 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop&q=80';
+}
+
 class MapboxPoiImage extends StatefulWidget {
   final String placeName;
   final double lat;
@@ -133,7 +158,7 @@ class _MapboxPoiImageState extends State<MapboxPoiImage> {
         'https://en.wikipedia.org/w/api.php?action=query&origin=*&generator=search'
         '&gsrsearch=${Uri.encodeComponent(cleanName)}&prop=pageimages&pithumbsize=600&format=json',
       );
-      final wResp = await http.get(wikiUrl, headers: {'User-Agent': 'Lady PilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 3));
+      final wResp = await http.get(wikiUrl, headers: kIsWeb ? null : const {'User-Agent': 'LadyPilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 3));
       if (wResp.statusCode == 200) {
         final wData = jsonDecode(wResp.body);
         final pages = wData['query']?['pages'] as Map<String, dynamic>?;
@@ -154,9 +179,9 @@ class _MapboxPoiImageState extends State<MapboxPoiImage> {
     try {
       final geoUrl = Uri.parse(
         'https://en.wikipedia.org/w/api.php?action=query&origin=*&generator=geosearch'
-        '&ggscoord=${widget.lat}|${widget.lng}&ggsradius=15000&ggslimit=5&prop=pageimages&pithumbsize=600&format=json',
+        '&ggscoord=${widget.lat}|${widget.lng}&ggsradius=10000&ggslimit=5&prop=pageimages&pithumbsize=600&format=json',
       );
-      final gResp = await http.get(geoUrl, headers: {'User-Agent': 'Lady PilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 3));
+      final gResp = await http.get(geoUrl, headers: kIsWeb ? null : const {'User-Agent': 'LadyPilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 3));
       if (gResp.statusCode == 200) {
         final gData = jsonDecode(gResp.body);
         final pages = gData['query']?['pages'] as Map<String, dynamic>?;
@@ -179,31 +204,6 @@ class _MapboxPoiImageState extends State<MapboxPoiImage> {
     if (mounted) {
       setState(() => _photoUrl = categoryPhoto);
     }
-  }
-
-  // Real photographs for popular Indian place categories
-  String _getCategoryRealPhoto(String name) {
-    final n = name.toLowerCase();
-    if (n.contains('railway') || n.contains('station') || n.contains('train')) {
-      return 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80';
-    } else if (n.contains('bus') || n.contains('stand') || n.contains('complex') || n.contains('terminal')) {
-      return 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&auto=format&fit=crop&q=80';
-    } else if (n.contains('mall') || n.contains('shopping') || n.contains('center') || n.contains('centre')) {
-      return 'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=600&auto=format&fit=crop&q=80';
-    } else if (n.contains('hospital') || n.contains('clinic') || n.contains('care') || n.contains('medical')) {
-      return 'https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?w=600&auto=format&fit=crop&q=80';
-    } else if (n.contains('temple') || n.contains('mandir') || n.contains('church') || n.contains('masjid')) {
-      return 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=600&auto=format&fit=crop&q=80';
-    } else if (n.contains('college') || n.contains('school') || n.contains('university') || n.contains('campus')) {
-      return 'https://images.unsplash.com/photo-1562774053-701939374585?w=600&auto=format&fit=crop&q=80';
-    } else if (n.contains('airport') || n.contains('flight')) {
-      return 'https://images.unsplash.com/photo-1530521954074-e64f6810b32d?w=600&auto=format&fit=crop&q=80';
-    } else if (n.contains('hotel') || n.contains('resort') || n.contains('stay') || n.contains('inn')) {
-      return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=80';
-    } else if (n.contains('park') || n.contains('garden') || n.contains('river') || n.contains('lake') || n.contains('ghat')) {
-      return 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80';
-    }
-    return 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=600&auto=format&fit=crop&q=80';
   }
 
   @override
@@ -439,15 +439,27 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
       debugPrint("Load recent searches error: $e");
     }
 
-    // 3. Query Wikimedia Geosearch for authentic local landmarks with genuine photographs around GPS
+    // 1. Seed with high-quality preloaded landmarks from DestinationPreloadService
+    final preload = DestinationPreloadService();
+    if (preload.nearbyPlaces.isNotEmpty) {
+      for (final p in preload.nearbyPlaces) {
+        final key = p.title.toLowerCase();
+        if (!seenNames.contains(key)) {
+          seenNames.add(key);
+          combined.add(p);
+        }
+      }
+    }
+
+    // 2. Query Wikimedia Geosearch for authentic local landmarks with genuine photographs around GPS
     try {
       final lat = _pickupLocation.lat;
       final lng = _pickupLocation.lng;
       final geoUrl = Uri.parse(
-        'https://en.wikipedia.org/w/api.php?action=query&generator=geosearch'
-        '&ggscoord=$lat|$lng&ggsradius=20000&ggslimit=8&prop=pageimages|coordinates&pithumbsize=600&format=json',
+        'https://en.wikipedia.org/w/api.php?action=query&origin=*&generator=geosearch'
+        '&ggscoord=$lat|$lng&ggsradius=10000&ggslimit=10&prop=pageimages|coordinates&pithumbsize=600&format=json',
       );
-      final gResp = await http.get(geoUrl, headers: {'User-Agent': 'Lady PilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 3));
+      final gResp = await http.get(geoUrl, headers: kIsWeb ? null : const {'User-Agent': 'LadyPilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 4));
       if (gResp.statusCode == 200) {
         final gData = jsonDecode(gResp.body);
         final pages = gData['query']?['pages'] as Map<String, dynamic>?;
@@ -463,6 +475,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
               if (!seenNames.contains(key)) {
                 seenNames.add(key);
                 final dist = _locationService.calculateDistanceKm(lat, lng, cLat, cLng);
+                final photoUrl = (thumb != null && thumb.isNotEmpty) ? thumb : _getCategoryRealPhoto(title);
                 combined.add(DynamicPlaceItem(
                   title: title,
                   address: title,
@@ -471,14 +484,17 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                   tag: 'Nearby',
                   distanceKm: dist,
                   zoom: 15.2,
-                  photoUrl: thumb,
+                  photoUrl: photoUrl,
+                  photoUrls: [photoUrl],
                 ));
               }
             }
           }
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("Wikimedia geosearch in search screen error: $e");
+    }
 
     // 4. Dynamically Query Mapbox Search Box & Geocoding for POIs
     try {
@@ -542,6 +558,9 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
 
                       seenNames.add(name.toLowerCase());
                       final dist = _locationService.calculateDistanceKm(lat, lng, pLat, pLng);
+                      final safePhoto = (extractedPhotoUrl != null && extractedPhotoUrl.isNotEmpty)
+                          ? extractedPhotoUrl
+                          : _getCategoryRealPhoto(name);
                       combined.add(DynamicPlaceItem(
                         title: name,
                         address: fullAddr,
@@ -550,7 +569,8 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                         tag: 'Nearby',
                         distanceKm: dist,
                         zoom: 15.2,
-                        photoUrl: extractedPhotoUrl,
+                        photoUrl: safePhoto,
+                        photoUrls: [safePhoto],
                       ));
                     }
                   }
@@ -583,6 +603,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                 if (!seenNames.contains(key)) {
                   seenNames.add(key);
                   final dist = _locationService.calculateDistanceKm(lat, lng, pLat, pLng);
+                  final pPhoto = _getCategoryRealPhoto(placeName);
                   combined.add(DynamicPlaceItem(
                     title: placeName,
                     address: fullAddr,
@@ -591,6 +612,8 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
                     tag: 'Nearby',
                     distanceKm: dist,
                     zoom: 15.2,
+                    photoUrl: pPhoto,
+                    photoUrls: [pPhoto],
                   ));
                 }
               }
@@ -620,6 +643,7 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
           final hLat = h['lat'] as double;
           final hLng = h['lng'] as double;
           final dist = _locationService.calculateDistanceKm(_pickupLocation.lat, _pickupLocation.lng, hLat, hLng);
+          final hPhoto = _getCategoryRealPhoto(title);
           combined.add(DynamicPlaceItem(
             title: title,
             address: h['address'] as String,
@@ -628,6 +652,8 @@ class _DestinationSearchScreenState extends State<DestinationSearchScreen> {
             tag: 'Nearby',
             distanceKm: dist,
             zoom: 15.0,
+            photoUrl: hPhoto,
+            photoUrls: [hPhoto],
           ));
         }
       }

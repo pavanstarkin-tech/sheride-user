@@ -60,7 +60,7 @@ class _PlaceCardImageSliderState extends State<PlaceCardImageSlider> {
     } else if (n.contains('park') || n.contains('garden') || n.contains('river') || n.contains('lake') || n.contains('ghat')) {
       return 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80';
     }
-    return 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=600&auto=format&fit=crop&q=80';
+    return 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop&q=80';
   }
 
   @override

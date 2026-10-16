@@ -602,23 +602,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
         ),
 
-        // Top White Fade Gradient Background (Ensures Notification & Header Clarity)
+        // Top White Fade Gradient Background (Reduced to prevent obscuring map)
         Positioned(
           top: 0,
           left: 0,
           right: 0,
-          height: 135,
+          height: 40,
           child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.white.withValues(alpha: 0.98),
-                  Colors.white.withValues(alpha: 0.85),
+                  Colors.white.withValues(alpha: 0.20),
                   Colors.white.withValues(alpha: 0.0),
                 ],
-                stops: const [0.0, 0.65, 1.0],
+                stops: const [0.0, 1.0],
               ),
             ),
           ),

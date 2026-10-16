@@ -98,7 +98,9 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
     }
     _dropLocation = widget.drop;
 
-    _options = _rideService.calculateFares(_pickupLocation, _dropLocation);
+    final initialOptions = _rideService.calculateFares(_pickupLocation, _dropLocation);
+    final available = initialOptions.where((opt) => opt.isAvailable).toList();
+    _options = available.isNotEmpty ? available : initialOptions;
     _loadMapboxDrivingRoute();
     _loadNearbyVehicles();
     _listenToVehicleSettings();
@@ -127,6 +129,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
             _vehicleCustomSettings = customSettings;
             if (_routeInfo != null) {
               _options = _recalculateFaresWithRoadDistance(_routeInfo!.distanceKm, _routeInfo!.durationMin);
+              if (_selectedIndex >= _options.length) _selectedIndex = 0;
             }
           });
         }
@@ -142,6 +145,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
             _adminSurgeMultiplier = (surge > 0) ? surge : 1.0;
             if (_routeInfo != null) {
               _options = _recalculateFaresWithRoadDistance(_routeInfo!.distanceKm, _routeInfo!.durationMin);
+              if (_selectedIndex >= _options.length) _selectedIndex = 0;
             }
           });
         }
@@ -177,38 +181,62 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
   }
 
   Future<void> _loadMapboxDrivingRoute() async {
-    // Refresh with fresh GPS position if available
     try {
-      final pos = await _locationService.getCurrentPosition();
-      if (pos != null && mounted) {
-        final addr = await _locationService.reverseGeocode(pos.latitude, pos.longitude);
-        setState(() {
-          _pickupLocation = LocationPoint(
-            lat: pos.latitude,
-            lng: pos.longitude,
-            address: addr.fullAddress.isNotEmpty ? addr.fullAddress : _pickupLocation.address,
-            name: addr.locality.isNotEmpty ? addr.locality : _pickupLocation.name,
-          );
-        });
+      final route = await _locationService.getDrivingRoute(
+        _pickupLocation.lat,
+        _pickupLocation.lng,
+        _dropLocation.lat,
+        _dropLocation.lng,
+      ).timeout(
+        const Duration(milliseconds: 2500),
+        onTimeout: () => null,
+      );
+
+      if (mounted) {
+        if (route != null) {
+          setState(() {
+            _routeInfo = route;
+            _isLoadingRoute = false;
+            _options = _recalculateFaresWithRoadDistance(route.distanceKm, route.durationMin);
+            if (_selectedIndex >= _options.length) _selectedIndex = 0;
+          });
+          _drawRouteAndFitCamera();
+        } else {
+          // Instant geodesic road curvature fallback so user experiences zero lag
+          final distKm = (_locationService.calculateDistanceKm(
+            _pickupLocation.lat,
+            _pickupLocation.lng,
+            _dropLocation.lat,
+            _dropLocation.lng,
+          ) * 1.25);
+          final safeDist = max(1.0, double.parse(distKm.toStringAsFixed(1)));
+          final durMin = max(4, (safeDist * 2.8).round());
+          setState(() {
+            _isLoadingRoute = false;
+            _options = _recalculateFaresWithRoadDistance(safeDist, durMin);
+            if (_selectedIndex >= _options.length) _selectedIndex = 0;
+          });
+          _drawRouteAndFitCamera();
+        }
       }
     } catch (e) {
-      debugPrint("Live GPS fetch notice: $e");
-    }
-
-    final route = await _locationService.getDrivingRoute(
-      _pickupLocation.lat,
-      _pickupLocation.lng,
-      _dropLocation.lat,
-      _dropLocation.lng,
-    );
-
-    if (mounted && route != null) {
-      setState(() {
-        _routeInfo = route;
-        _isLoadingRoute = false;
-        _options = _recalculateFaresWithRoadDistance(route.distanceKm, route.durationMin);
-      });
-      _drawRouteAndFitCamera();
+      debugPrint("Driving route fast fallback: $e");
+      if (mounted) {
+        final distKm = (_locationService.calculateDistanceKm(
+          _pickupLocation.lat,
+          _pickupLocation.lng,
+          _dropLocation.lat,
+          _dropLocation.lng,
+        ) * 1.25);
+        final safeDist = max(1.0, double.parse(distKm.toStringAsFixed(1)));
+        final durMin = max(4, (safeDist * 2.8).round());
+        setState(() {
+          _isLoadingRoute = false;
+          _options = _recalculateFaresWithRoadDistance(safeDist, durMin);
+          if (_selectedIndex >= _options.length) _selectedIndex = 0;
+        });
+        _drawRouteAndFitCamera();
+      }
     }
   }
 
@@ -263,7 +291,7 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
       return true;
     }
 
-    return [
+    final allOptions = [
       VehicleFareOption(
         id: 'scooty',
         name: (_vehicleCustomSettings['scooty']?['name'] as String?) ?? 'Scooty',
@@ -425,6 +453,9 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
         isAvailable: isVehicleAvailable('ev_car'),
       ),
     ];
+
+    final available = allOptions.where((opt) => opt.isAvailable).toList();
+    return available.isNotEmpty ? available : allOptions;
   }
 
   Future<Uint8List> _createVehicleMapMarkerImage({
@@ -1554,23 +1585,22 @@ class _RideSelectionScreenState extends State<RideSelectionScreen> with SingleTi
                   ),
           ),
 
-          // Top White Fade Gradient Background (Exact match with Home Page)
+          // Top White Fade Gradient Background (Reduced to prevent obscuring map)
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: 135,
+            height: 40,
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withValues(alpha: 0.98),
-                    Colors.white.withValues(alpha: 0.85),
+                    Colors.white.withValues(alpha: 0.20),
                     Colors.white.withValues(alpha: 0.0),
                   ],
-                  stops: const [0.0, 0.65, 1.0],
+                  stops: const [0.0, 1.0],
                 ),
               ),
             ),
