@@ -558,6 +558,87 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
 
+                      // Top Tab Switcher: [ Sign In , Create Account ]
+                      Container(
+                        height: 50,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0EEFD),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (_isSignUp) setState(() => _isSignUp = false);
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeInOut,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: !_isSignUp ? AppColors.primary : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(21),
+                                    boxShadow: !_isSignUp
+                                        ? [
+                                            BoxShadow(
+                                              color: AppColors.primary.withValues(alpha: 0.3),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    'Sign In',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: !_isSignUp ? Colors.white : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (!_isSignUp) setState(() => _isSignUp = true);
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeInOut,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: _isSignUp ? AppColors.primary : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(21),
+                                    boxShadow: _isSignUp
+                                        ? [
+                                            BoxShadow(
+                                              color: AppColors.primary.withValues(alpha: 0.3),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Text(
+                                    'Create Account',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: _isSignUp ? Colors.white : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
                       // Email & Password Direct Form
                       Form(
                         key: _formKey,
