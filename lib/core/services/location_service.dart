@@ -47,10 +47,12 @@ class LocationService {
 
   void _initPassiveLocationStream() async {
     try {
-      final cached = await Geolocator.getLastKnownPosition();
-      if (cached != null) {
-        _lastKnownPosition = cached;
-        reverseGeocode(cached.latitude, cached.longitude);
+      if (!kIsWeb) {
+        final cached = await Geolocator.getLastKnownPosition();
+        if (cached != null) {
+          _lastKnownPosition = cached;
+          reverseGeocode(cached.latitude, cached.longitude);
+        }
       }
 
       Geolocator.getPositionStream(
@@ -123,14 +125,18 @@ class LocationService {
     try {
       final hasPermission = await requestPermission();
       if (!hasPermission) {
-        _lastKnownPosition = await Geolocator.getLastKnownPosition();
+        if (!kIsWeb) {
+          _lastKnownPosition = await Geolocator.getLastKnownPosition();
+        }
         return _lastKnownPosition;
       }
 
-      // 1. Try to get last known position first for instant response
-      final cached = await Geolocator.getLastKnownPosition();
-      if (cached != null) {
-        _lastKnownPosition = cached;
+      // 1. Try to get last known position first on non-web for instant response
+      if (!kIsWeb) {
+        final cached = await Geolocator.getLastKnownPosition();
+        if (cached != null) {
+          _lastKnownPosition = cached;
+        }
       }
 
       // 2. Fetch fresh high-accuracy position from FusedLocationProvider (fast 3.5s timeout)
@@ -164,9 +170,11 @@ class LocationService {
       return _lastKnownPosition;
     } catch (e) {
       debugPrint("Error in getCurrentPosition: $e");
-      try {
-        _lastKnownPosition = await Geolocator.getLastKnownPosition();
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          _lastKnownPosition = await Geolocator.getLastKnownPosition();
+        } catch (_) {}
+      }
       return _lastKnownPosition;
     }
   }

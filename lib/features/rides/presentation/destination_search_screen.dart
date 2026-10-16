@@ -130,7 +130,7 @@ class _MapboxPoiImageState extends State<MapboxPoiImage> {
     // Tier 2: Real Landmark Photo from Wikipedia / Wikimedia by Title
     try {
       final wikiUrl = Uri.parse(
-        'https://en.wikipedia.org/w/api.php?action=query&generator=search'
+        'https://en.wikipedia.org/w/api.php?action=query&origin=*&generator=search'
         '&gsrsearch=${Uri.encodeComponent(cleanName)}&prop=pageimages&pithumbsize=600&format=json',
       );
       final wResp = await http.get(wikiUrl, headers: {'User-Agent': 'Lady PilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 3));
@@ -153,7 +153,7 @@ class _MapboxPoiImageState extends State<MapboxPoiImage> {
     // Tier 3: Real Landmark Photo from Wikimedia Geosearch by Coordinates
     try {
       final geoUrl = Uri.parse(
-        'https://en.wikipedia.org/w/api.php?action=query&generator=geosearch'
+        'https://en.wikipedia.org/w/api.php?action=query&origin=*&generator=geosearch'
         '&ggscoord=${widget.lat}|${widget.lng}&ggsradius=15000&ggslimit=5&prop=pageimages&pithumbsize=600&format=json',
       );
       final gResp = await http.get(geoUrl, headers: {'User-Agent': 'Lady PilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 3));

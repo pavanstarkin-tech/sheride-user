@@ -176,7 +176,7 @@ class DestinationPreloadService extends ChangeNotifier {
       // 4. Query Wikimedia Geosearch for authentic nearby landmarks with genuine photos
       try {
         final geoUrl = Uri.parse(
-          'https://en.wikipedia.org/w/api.php?action=query&generator=geosearch'
+          'https://en.wikipedia.org/w/api.php?action=query&origin=*&generator=geosearch'
           '&ggscoord=$targetLat|$targetLng&ggsradius=20000&ggslimit=10&prop=pageimages|coordinates&pithumbsize=600&format=json',
         );
         final gResp = await http.get(geoUrl, headers: {'User-Agent': 'Lady PilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 4));
@@ -359,7 +359,7 @@ class DestinationPreloadService extends ChangeNotifier {
     // Query Wikipedia place image search for additional gallery photos
     try {
       final wikiUrl = Uri.parse(
-        'https://en.wikipedia.org/w/api.php?action=query&generator=search'
+        'https://en.wikipedia.org/w/api.php?action=query&origin=*&generator=search'
         '&gsrsearch=${Uri.encodeComponent(placeName)}&prop=pageimages&pithumbsize=600&format=json',
       );
       final wResp = await http.get(wikiUrl, headers: {'User-Agent': 'Lady PilotApp/1.0 (contact@sheride.app)'}).timeout(const Duration(seconds: 3));

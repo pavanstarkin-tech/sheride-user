@@ -195,7 +195,26 @@ class AuthService extends ChangeNotifier {
     setError(null);
 
     try {
-      // 1. Trigger the native Google Account chooser modal/bottom-sheet
+      if (kIsWeb) {
+        _firebaseAuth ??= FirebaseAuth.instance;
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        final userCredential = await _firebaseAuth!.signInWithPopup(googleProvider);
+        final user = userCredential.user;
+
+        if (user != null) {
+          _user = user;
+          await _ensureUserProfileInDatabase(user);
+          await _persistUserSession(user);
+        }
+
+        setLoading(false);
+        notifyListeners();
+        return userCredential;
+      }
+
+      // 1. Trigger the native Google Account chooser modal/bottom-sheet on mobile
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         // User dismissed / cancelled Google account picker
